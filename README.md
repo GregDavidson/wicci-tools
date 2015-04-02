@@ -1,27 +1,27 @@
 # Directory: Wicci/Tools
 
 ## Subdirectories:
-	Bin/	- Utilitiy Programs (mostly scripts) for the Wicci System
-	Lib/		- files needed by some Utility Programs
-	Src/	- source files for any compiled  Utility Programs
+		  Bin/	- Utilitiy Programs (mostly scripts) for the Wicci System
+		  Lib/		- files needed by some Utility Programs
+		  Src/	- source files for any compiled  Utility Programs
 
 ## All scripts should be self documenting as follows:
-	shell scripts should have a line with pgm_purpose='...'
-	other scripts should have a line with #[[:space:]]*[Pp]urpose: ...
+	   shell scripts should have a line with pgm_purpose='...'
+	   other scripts should have a line with #[[:space:]]*[Pp]urpose: ...
 near the top of the file.
 
 ## wicci-paths
 
 To add key Wicci paths, etc. to your script, put one of these at the top:
-				eval `wicci-paths`		-- just adds key paths & filenames
-				eval `wicci-paths +`	-- also sources lib/wicci.sh
-				eval `wicci-paths simples`	-- also sources simples package
+			 eval `wicci-paths`		-- just adds key paths & filenames
+			 eval `wicci-paths +`	-- also sources lib/wicci.sh
+			 eval `wicci-paths simples`	-- also sources simples package
 Note: wicci-paths checks your shell and does "the right thing".
 
 ## Documentation
 
-	 $ wicci-tools wicci-tools	# wicci-tools describes itself
-	 $ wicci-tools		#  wicci-tools describes ALL wicci-tools
+		  $ wicci-tools wicci-tools	# wicci-tools describes itself
+		  $ wicci-tools		#  wicci-tools describes ALL wicci-tools
 
 ## Notes on future improvements
 
