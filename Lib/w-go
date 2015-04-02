@@ -1,0 +1,14 @@
+#!/bin/bash
+
+. ${simples_bash:-$HOME/Lib/Bash}/simples.bash ||
+  ( >&2 echo $0: "Can't source simples package!" ; exit 1 )
+
+simple_require path_add
+
+w_dir="~/.Wicci"
+w_bin_dir="$w_dir/Tools/Bin"
+w_core_dir="$w_dir/Core"
+
+dir_add -a PATH "$w_bin_dir"
+cd "$w_core_dir"
+emacs-jgd "${@:-.}" -title 'Wicci Project'

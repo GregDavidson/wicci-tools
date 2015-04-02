@@ -1,0 +1,49 @@
+#!/bin/sh
+pgm_purpose='Obsolete: Generate ** Provides section for a Wicci SQL File.'
+echo '-- ** Provides'
+echo
+for f; do
+  lines=$(sed -n '/^[[:space:]]*CREATE[[:space:]]\+DOMAIN[[:space:]]\+\(\w\+\)[[:space:]]\+AS[[:space:]]\+\([^[:space:];]*\).*/s//--	\1 -> \2/p' "$f")
+  if [ -n "$lines" ]; then
+    echo '-- ***	DOMAINS'
+    echo
+    echo "$lines"
+    echo
+  fi
+  lines=$(sed -n '/^-- \*\+ \+TABLE \+\(.*\)/s//--	\1/p' "$f")
+  if [ -n "$lines" ]; then
+    echo '-- ***	TABLES'
+    echo
+    echo "$lines"
+    echo
+  fi
+# lines=$(sed -n '/^-- \*\+ \(INSERT INTO .*\)/s//--	\1/p' "$f")
+  lines=$(sed -n '/^INSERT[[:space:]]\+INTO[[:space:]]\+\([^[:space:]].*[^[:space:]]\)[[:space:]]*VALUES[[:space:]]*\((.*)\);.*/s//--	\1 <- \2/p' "$f")
+  if [ -n "$lines" ]; then
+    echo '-- ***	DATA'
+    echo
+    echo "$lines"
+    echo
+  fi
+  lines=$(sed -n '/^-- \*\+ \+VIEW \+\(.*\)/s//--	\1/p' "$f")
+  if [ -n "$lines" ]; then
+    echo '-- ***	VIEWS'
+    echo
+    echo "$lines"
+    echo
+  fi
+  lines=$(sed -n '/^-- \*\+ \(ON [A-Z]\+ TO .*\)/s//--	\1/p' "$f")
+  if [ -n "$lines" ]; then
+    echo '-- ***	RULES'
+    echo
+    echo "$lines"
+    echo
+  fi
+  lines=$(sed -n '/^-- +\+ \(.* [-][>].*\)/s//--	\1/p' "$f")
+  if [ -n "$lines" ]; then
+    echo '-- ***	FUNCTIONS'
+    echo
+    echo "$lines"
+    echo
+  fi
+done

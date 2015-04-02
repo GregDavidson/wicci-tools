@@ -1,0 +1,27 @@
+#!/bin/sh
+pgm_purpose='Count Files, TABLEs, VIEWs, FUNCTIONs [draft]'
+eval `wicci-paths`
+
+# Need to deal better with the free form syntax:
+# creating statements may cross line boundaries,
+# but there can also be more than one in a statement.
+
+# Need to deal with false hits from comments, literals
+# including function bodies, comments, etc.
+
+# Want to also count things created by meta-code
+
+# For the total count, just ask the database!
+
+if [ $# = 0 ]; then
+	set -- `wicci-sql-files`
+fi
+
+echo Number of files: $#
+
+# need to remove comments & arbitrary literals somewhere!
+# literals with only name characters need to stay!
+cat "$@" | tr -s ' 	' ' ' |
+		 sed -f $WICCI_TOOLS_LIB/w-loc.sed	|
+		 awk -f $WICCI_TOOLS_LIB/w-loc.awk |
+		 sort

@@ -1,0 +1,49 @@
+#!/usr/bin/gawk -f
+
+function help_() {
+		# getline cmdline < "/proc/self/cmdline"
+		# split(cmdline,cmdarray,"\0");
+		# pgm_path=T[3];
+		# pgm_name=gensub(/^.*\//, "", pgm_path);
+		pgm_name="ls-sql-funcs"
+		pgm_usage="[sql-file]...";
+		pgm_purpose="list sql function headers from sql input";
+		pgm_version="0.1";
+		pgm_notes="Notes: Function headers must not be broken across paragraphs.";
+}
+
+function help() {
+		help_(); 
+		switch (ARGV[1]) {
+		case "--what":
+				printf("%s: %s\n", pgm_name, pgm_purpose);
+				exit(0);
+		case "--how":
+				printf("Usage: %s %s\n", pgm_name, pgm_usage);
+				exit(0);
+		case "--about":
+				printf("%s: version %s\n", pgm_name, pgm_version);
+				exit(0);
+		case "--info":
+				printf("%s: %s\n%s\n", pgm_name, pgm_version, pgm_notes);
+				exit(0);
+		}
+}
+
+function print_func_headers(record) {
+    if (record ~ sql_func_pat) {
+				print_func_headers(gensub(sql_func_pat, "\\1", "1", record))
+				printf("%s", gensub(sql_func_pat, "\\3\\4 \\5\n", "1", record))
+    }
+}
+
+BEGIN {
+		help();
+    RS="" ; FS="\n";
+    IGNORECASE=1;
+    sql_func_pat="(.*)\\<CREATE\\>[[:space:]]*(\\<OR\\>[[:space:]]*\\<REPLACE\\>)?[[:space:]]*\\<FUNCTION\\>[[:space:]]*(\\<[A-Z_][A-Z0-9_]*\\>)[[:space:]]*([(][^)]*[)])[[:space:]]*\\<RETURNS\\>[[:space:]]*((\\<SETOF\\>[[:space:]]*)?(\\<DOUBLE\\>[[:space:]]*)?\\<[A-Z_][A-Z0-9_]*\\>(\\[\\])?)(.*)";
+}
+
+$0 ~ sql_func_pat {
+    print_func_headers(gensub("[[:space:]]+", " ", "g"))
+}

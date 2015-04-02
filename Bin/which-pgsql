@@ -1,0 +1,16 @@
+#!/bin/sh
+#Purpose: Run gdb on selected PostgreSQL process.
+
+# tee /dev/tty is for user to see the set of procs considered
+PROCS=`ps -efww | sed -n -e 1p -e /'^postgres'/p |
+egrep -v  'postgres: (stats|writer|archiver|logger|autovacuum)' |
+tee /dev/tty | awk 'NR>1{print $2}'`
+
+if false; then
+  if [ `echo "$PROCS" | wc -w` -eq 1 ]
+  then
+  exec gdb $PGINSTROOT/bin/postgres -silent "$PROCS"
+  else
+  exec gdb $PGINSTROOT/bin/postgres -silent
+  fi
+fi

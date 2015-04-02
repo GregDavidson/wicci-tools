@@ -1,0 +1,18 @@
+#!/usr/bin/sh
+pgm_purpose='list targets of makefiles'
+pgm_name="${0##*/}"
+pgm_usage="$pgm_name makefile..."
+[ "$#" -gt 0 ] || { >&2 echo No files ;  exit 1; }
+for f; do
+    case "$f" in
+	(*/*) d="${f%/*}/" ;;
+	(*) d="" ;;
+    esac
+    if [ -f "$f" ]; then
+	awk -v d="$d" '/^[^#[:space:]]/ && $1 !~ /=/ && $2 != "=" {
+		print d gensub(/:$/, "", 1, $1)
+	}' "$f"
+    else
+	>&2 echo No file "$f"
+    fi
+done

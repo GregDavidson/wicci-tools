@@ -1,0 +1,24 @@
+#!/bin/bash
+pgm_purpose='list various categories of Wicci files'
+eval `wicci-paths +`
+pgm_usage="Usage: $pgm [.]all|c|sql"
+[[ $# == 1 ]] || die $pgm_usage
+case "$1" in
+  (c|.c) file_lists='WICCI-C-FILES' ;;
+  (sql|.sql) file_lists='WICCI-SQL-FILES' ;;
+  (all|.all) file_lists='WICCI-C-FILES WICCI-SQL-FILES' ;;
+  (*) die $pgm_usage ;;
+esac
+list_files() {
+  d="$1"; shift
+  for f; do
+    [[ -f "$d/$f" ]] && awk 'NF && !/^	/ && $1 !~ /^#/{print $1}' "$d/$f"
+  done
+}
+case "$1" in
+  (.*) list_files . $file_lists ;;
+  (*) cd "$WICCI_CORE"
+      for d in `< "$WICCI_SQL_DIRS"`; do
+	list_files "$d" $file_lists | sed "s|^|$d/|"
+      done ;;
+esac

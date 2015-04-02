@@ -1,0 +1,33 @@
+#!/bin/sh
+pgm_purpose='Update the set_file(...) line in some or all .sql files'
+eval `wicci-paths +`
+
+[ $# -ne 0 ] || set -- `ls-wicci-sql`
+
+pat="\\<set_file('[^')]*'[^)]*)"
+
+for f; do
+	[ -f "$f" ] || error 2 "No file $f"
+	count=`grep -c "$pat" "$f"`
+	case "$count" in
+	0)
+ed $f << EOF
+1a
+SELECT set_file('$f', '\$Id\$');
+.
+w
+q
+EOF
+		;;
+	1)
+ed $f << EOF
+g/$pat/s//set_file('$f', '\$Id\$')/
+w
+q
+EOF
+		;;
+	*)
+		msg "$f has $count set_file's"
+		;;
+	esac
+done

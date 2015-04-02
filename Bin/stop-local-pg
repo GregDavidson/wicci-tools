@@ -1,0 +1,26 @@
+#!/bin/bash
+pgm_purpose='stop local PostgreSQL service'
+running=false
+while sudo su postgres -c "/usr/sbin/rcpostgresql status" | grep running; do
+  running=true
+  echo -n "Shall I stop init's postgres? [yn] "
+  read ans junk
+  case "$ans" in
+    [yY]*) sudo /usr/sbin/rcpostgresql stop ;;
+    *) echo Goodbye! ; exit 1 ;;
+  esac
+done
+$running && exit 0
+
+# Should actually check and see if postgres is running
+pg_home=/usr/local/pgsql
+pg_data=$pg_home/data
+sudo su postgres -c "/usr/local/pgsql/bin/pg_ctl stop -D $pg_data"
+
+if sudo /usr/sbin/rcpostgresql status | grep unused; then
+  echo -n "Shall I (re)start init's postgres? [yn] "
+  read ans junk
+  case "$ans" in
+    [yY]*) sudo /usr/sbin/rcpostgresql start ;;
+  esac
+fi

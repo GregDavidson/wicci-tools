@@ -1,0 +1,13 @@
+*~
+*.o
+*.so
+*.sql-out
+*.sql-out-err
+TAGS
+TAGS-*
+Limbo
+Makefile.depends
+Doc
+.emacs.desktop
+GREG*
+STATUS

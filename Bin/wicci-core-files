@@ -1,0 +1,6 @@
+#!/bin/bash
+pgm_purpose='List all non-trash files under Wicci Core'
+inits="$WICCI_TOOLS_LIB/wicci.sh"
+eval `wicci-paths +`
+cd $WICCI_CORE
+find * ! -name '*~' ! -name Limbo ! -name '*foo' ! -name '*old' -type f

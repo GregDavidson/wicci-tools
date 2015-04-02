@@ -1,0 +1,75 @@
+#!/bin/bash
+
+pgm_purpose='obsolete?'
+
+note() { >&2 echo "$*" ; }
+error() { note "${0##*/} error: $*" ; }
+die() { local code="$1" ; shift ;  error "$*"; exit $code; }
+
+all_dirs() {
+    local f; for f; do
+	[ ! -d "$f" ] && return 1
+    done
+    return 0
+}
+
+all_dirs . .. || die 3 all_dirs . ..
+all_dirs . .. $HOME/.profile && die 3 all_dirs . .. $HOME/.profile
+
+ff="/tmp/foo"
+bf="/tmp/#foo#"
+touch "$bf" || die 3 touch "$bf"
+
+is_backup_file() {  [[ -f "$1" && $(basename "$1") == \#*\# ]]; }
+
+is_backup_file "$bf" || die 3 is_backup_file "$bf"
+
+require_backup_file() {
+    is_backup_file "$1" || die 2 "$1 not an emacs backup file"
+}
+
+require_backup_file "$bf"
+
+backup_root() {
+    require_backup_file "$1"
+    echo $1 | sed 's-^\(.*\)#\([^#]*\)#$-\1\2-'
+}
+
+br=$(backup_root "$bf")
+[ "$ff" == "$br" ] || die 3 backup_root $bf returned "$br"
+
+all_backup_files() {
+    local f; for f; do
+	is_backup_file "$f" || return 1
+    done
+    return 0
+}
+
+all_backup_files $bf || die 3 all_backup_files $bf
+
+merge_backup() {
+    local f g;  for f; do
+	is_backup_file "$f" || {
+	    error "ignoring non-backup-file $f" ; continue
+	}
+	g=$(backup_root "$f")
+	[[ "$f" -nt "$g" ]] || {
+	    ls -l "$f" "$g"
+	    error "ignoring older backup-file $f" ; continue
+	}
+	mv --backup=numbered "$f" "$g"
+    done
+}
+
+merge_backup "$bf"
+
+if [ $# -eq 0 ]; then
+    merge_backup $(find . -name '#*#' -type f -print)
+elif all_dirs "$@"; then
+    merge_backup $(find "$@" -depth 1 -name '#*#' -print)
+elif all_backup_files "$@"; then
+    merge_backup "$@"
+else
+    die 1 "Usage $0 ([dirs...]|[emacs-backup-files...])"
+fi
+exit 0

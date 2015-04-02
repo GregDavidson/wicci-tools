@@ -1,0 +1,126 @@
+#!/bin/bash
+lib='~/.Wicci/Tools/Lib'
+. "$lib/wicci.bash"
+set_pgm_name
+pgm_version="0.4"
+pgm_purpose1="convert text file to sql blob"
+pgm_purpose2="send to stdout, file or PostgreSQL database"
+# # pgm_purpose="$pgm_purpose1; $pgm_purpose2"
+pgm_purpose="convert text file to sql blob; send to stdout, file or psql"
+
+pgm_f="-f (save to file)"
+pgm_d="-d database-name"
+pgm_p="-p psql-options"
+pgm_options_syntax="[ [$pgm_p] $pgm_d | $pgm_f ]"
+pgm_options="$pgm_f\t$pgm_d\t$pgm_p"
+pgm_args="input_file..."
+
+pgm_syntax="$pgm_name $pgm_options_syntax $pgm_args"
+pgm_usage="Usage: $pgm_syntax"
+
+for f; do
+		case "$f" in
+				--help)
+						echo -n "$pgm_name" "[ --help | --usage | --version ]"
+						echo -e "\t${pgm_options}" | sed 's/\t/\n\t/g'
+						die0 "-- $pgm_purpose" ;;
+				--usage) die0 $pgm_usage ;;
+				--version) die0 $pgm_version ;;
+		esac
+done
+
+output_to_file='false'
+psql_options="" ; psql_database=""
+while getopts "fd:p:" opt; do 
+    case "$opt" in
+    f) output_to_file='true' ;;
+    d) psql_database="$OPTARG" ;;
+    p) psql_options="$OPTARG" ;;
+    '?')  die_ $LINENO $pgm_usage ;;
+    esac    
+done
+"$output_to_file" &&
+	[ -n "$psql_database" -o -n "$psql_options" ] && 
+	err_ $LINENO Specify database OR file options
+[ -n "$psql_options" ] && [ -z "$psql_database" ] && 
+	err_ $LINENO -p "$psql_options" requires -d database-name
+psql_options="$psql_options${psql_options:+ }$psql_database"
+
+shift `expr $OPTIND - 1`
+
+
+[ $# -ge 1 -] || err_ $LINENO "$pgm_usage"
+
+blob() {
+		if [ -f "settings.sql" ]; then
+				printf '\i %s\n' 'settings.sql'
+		else
+				[ -f "$default_settings" ] || err 5 "No file $default_settings"
+				printf '\i %s\n' "$default_settings"
+		fi
+
+		cat <<EOF
+SELECT set_file('$out_file', '\$Id');
+
+-- This file was generated automatically by
+-- $pgm
+-- Any changes you make to it will likely be lost!
+
+-- Any Copyrights which apply to the source file
+-- very likely apply to this derived file as well!
+
+SELECT get_page_uri('$page_uri');
+
+DELETE FROM wicci_page_rows WHERE uri=find_page_uri('$page_uri');
+
+EOF
+		printf "SELECT make_blob('%s', %s"  "$page_uri" "$super_quote"
+		cat "$in_file"
+		printf '%s);\n'  "$super_quote"
+}
+
+in_file="$1"
+case `file "$in_file"` in
+		(*text) ;;
+		(*) err 3 `file "$in_file"` ;;
+esac
+
+if [ $# -ge 2 ]; then
+		out_file="$2"
+else
+		out_file="${in_file%.*}.sql"
+		out_file="${out_file##*/}"
+fi
+
+if [ $# -ge 3 ]; then
+		page_uri="$3"
+else
+		page_uri="$in_file"
+		for x in '' .. Projects .. Wicci .. Core .. Lib .. ; do # he .. he!
+				page_uri="${page_uri#$x/}"
+		done
+fi
+page_uri="wicci.org/$page_uri"
+printf '%s\n' "$page_uri" | grep -v "'" ||
+	err 4 "illegal ' in page_uri $page_uri"
+
+i=''														# numeric value 0
+while
+	super_quote="\$$i\$"
+	fgrep -s "$super_quote" "$in_file" >/dev/null
+do
+		(( ++i ))
+done
+
+msg in_file: "$in_file"
+msg out_file: "$out_file"
+msg page_uri: "$page_uri"
+msg super_quote: "$super_quote"
+
+if [ "X$out_file" = 'X-' ]; then
+		blob
+else
+	blob > "$out_file"
+fi
+
+exit 0

@@ -1,0 +1,200 @@
+<?xml version='1.0'?>
+<xsl:stylesheet
+  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+  xmlns:str="http://exslt.org/strings"
+  extension-element-prefixes="str"
+  version='1.1'>
+        
+  <!-- Copyright (c) 2005-2011, J. Greg Davidson.-->
+  <!-- A stylesheet to turn xml into SQL tree building code. -->
+  <!-- See S7_wicci/wicci-test-index.xml4sql for example html input. -->
+  <!-- See S7_wicci/foo.svg and S7_wicci/bar.svg for svg examples. -->
+  <!-- See S5_xml/xml-html-code.sql for the constructor functions..  -->
+  
+  <!--
+       Nodes may sport the following pseudo-id-attributes:
+       i="hidden node id"	- when there is no id attribute
+       c="hidden non-element-child node id" - e.g. for a text node child
+       pseudo-id-attributes are stored in TABLE xml_doc_id_nodes,
+       rather than in actual attributes of the document.
+       -->
+  
+  <xsl:output method="text" omit-xml-declaration="yes" indent="yes"/>
+  
+  <xsl:variable name="newline" select="'&#010;'" />
+  <xsl:variable name="empty" select="''" />
+  <xsl:variable name="space" select="' '" />
+  <xsl:variable name="comma" select="','" />
+  
+  <xsl:variable name="in1" select="$space" />  <!-- indent 1 space -->
+  <!-- <xsl:variable name="in1" select="'&#09;'" /> <!- indent 1 tab -->
+  <xsl:variable name="ddoc" select="'/'" />  <!-- document delimiter -->
+  <xsl:variable name="dpos" select="'.'" />  <!-- path position delim -->
+  <xsl:variable name="empty_child" select="'#'" />  <!-- not empty! -->
+  <xsl:variable name="q" select='"&apos;"' />  <!-- 1 single quote -->
+  <xsl:variable name="qq" select='"&apos;&apos;"' />  <!-- 2 quotes -->
+  
+  <xsl:variable name="sq" select="concat($space,$q)" />
+  <xsl:variable name="cs" select="concat($comma,$space)" />
+  <xsl:variable name="qcs" select="concat($q,$cs)" />
+  
+  <!--	document root -->
+  <xsl:template name="doc" match="/*">
+    <xsl:param name="indent1" select="concat($newline,$in1)" />
+    <xsl:param name="indent2" select="concat($indent1,$in1)" />
+    <xsl:param name="indent3" select="concat($indent2,$in1)" />
+    <xsl:param name="indent4" select="concat($indent3,$in1)" />
+    <xsl:param name="indent5" select="concat($indent4,$in1)" />
+    <xsl:param name="doc" select="$empty" />
+    <xsl:param name="ns_cnt" select="count(namespace::*)" />
+    
+    <xsl:text>SELECT COALESCE(</xsl:text>
+    <xsl:value-of select="$indent1" />
+    <xsl:text>doc_page_from_uri_lang(u, t),</xsl:text>
+    <xsl:value-of select="$indent2" />
+    <xsl:text>(</xsl:text>
+    <xsl:value-of select="$indent3" />
+    <xsl:text>SELECT doc_page_from_ref_uri_lang_root(d, u, t</xsl:text>
+    <!-- reprocess node as a regular element -->
+    <xsl:call-template select="." name="element">
+      <xsl:with-param name="doc" select="$doc" />
+      <xsl:with-param name="parent" select="$empty" />
+      <xsl:with-param name="next" select="concat($comma, $indent4)" />
+      <xsl:with-param name="parent_ns_cnt" select="$ns_cnt" />
+    </xsl:call-template>
+    <xsl:value-of select="$indent3" />
+    <xsl:text>) FROM next_xml_doc() d</xsl:text>
+    <xsl:value-of select="$indent2" />
+    <xsl:text>)</xsl:text>
+    <xsl:value-of select="$newline" />
+    <xsl:text>) FROM get_page_uri(:doc_uri) u, xml_doctype(:doc_type, </xsl:text>
+    <xsl:value-of select='concat($q,str:replace(name(), $q, $qq),$q)' />
+    <xsl:text>) t;</xsl:text>
+    <xsl:value-of select="$newline" />
+  </xsl:template>
+  
+  <!-- any element -->
+  <xsl:template name="element" match="*">
+    <xsl:param name="doc" select="$empty" />
+    <xsl:param name="docd">
+      <xsl:choose>
+        <xsl:when test="normalize-space($doc) = $empty">
+          <xsl:value-of select="$empty" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="concat($doc, $ddoc)" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:param>
+    <xsl:param name="parent" select="$empty" />
+    <xsl:param name="index" select="count(preceding-sibling::*) + 1" />
+    <xsl:param name="next_parent">
+      <xsl:choose>
+        <xsl:when test="@i and @i != $empty">
+          <xsl:value-of select="@i" />
+        </xsl:when>
+        <xsl:when test="@id">
+          <xsl:value-of select="@id" />
+        </xsl:when>
+        <xsl:when test="$parent = $empty">
+          <xsl:value-of select="$index" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="concat($parent, $dpos, $index)" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:param>
+    <xsl:param name="id">
+      <xsl:choose>
+        <xsl:when test="@i or @id">
+          <xsl:value-of select="concat($docd, $next_parent)" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$empty" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:param>
+    <xsl:param name="next_child">
+      <xsl:choose>
+        <xsl:when test="@c and @c = $empty">
+          <xsl:value-of select="$empty_child" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="@c" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:param>
+    <xsl:param name="next" select="concat(',', $newline)" />
+    <xsl:param name="parent_ns_cnt" select="0" />
+    <xsl:param name="ns_cnt" select="count(namespace::*)" />
+    
+    <xsl:value-of select="$next" />
+    <xsl:if test="$ns_cnt > 0 and $ns_cnt != $parent_ns_cnt">
+      <xsl:text>( SELECT </xsl:text>
+    </xsl:if>
+    <xsl:text>xml_tree(</xsl:text>
+    <!-- <xsl:value-of select="concat($space, $index, $cs)" /> -->
+    <xsl:value-of select="concat($sq, str:replace($id, $q, $qq), $qcs)" />
+    <xsl:text>xml_kind(d, t, </xsl:text>
+    <xsl:value-of select='concat($q, namespace-uri(), $qcs)' />
+    <xsl:value-of select='concat($q, str:replace(name(), $q, $qq), $q)' />
+    <!-- process any attributes -->
+    <xsl:for-each select="@*">
+      <xsl:if
+test="name()!='d' and name()!='u' and name()!='t' and name()!='i' and name()!='c' "
+      >
+      	<xsl:value-of
+select="concat($cs, $q, str:replace(concat(name(), '=&quot;', normalize-space(.), '&quot;'), $q, $qq), $q)"
+      	/>
+      </xsl:if>
+    </xsl:for-each>
+    <xsl:text> )</xsl:text>
+    <!-- process any children -->
+    <xsl:apply-templates select="*|text()">
+      <xsl:with-param name="doc" select="$doc" />
+      <xsl:with-param name="parent" select="$next_parent" />
+      <xsl:with-param name="child" select="$next_child" />
+      <xsl:with-param name="next" select="concat($next,$in1)" />
+      <xsl:with-param name="parent_ns_cnt" select="$ns_cnt" />
+    </xsl:apply-templates>
+    <xsl:text> )</xsl:text>
+  </xsl:template>
+  
+  <!-- any text node -->
+  <xsl:template name="text" match="text()">
+    <xsl:param name="doc" select="$empty" />
+    <xsl:param name="docd">
+      <xsl:choose>
+        <xsl:when test="normalize-space($doc) = $empty">
+          <xsl:value-of select="$empty" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="concat($doc, $ddoc)" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:param>
+    <xsl:param name="parent" select="$empty" />
+    <xsl:param name="child" select="$empty" />
+    <xsl:param name="next" select="concat($newline)" />
+    <xsl:param name="index" select="count(preceding-sibling::*) + 1" />
+    <xsl:if test="normalize-space(.) != $empty">
+      <xsl:value-of select="$next" />
+      <xsl:text>xml_leaf(d,</xsl:text>
+      <xsl:choose>
+        <xsl:when test="$child = $empty">
+          <xsl:value-of select="concat($sq, $qcs)" />
+        </xsl:when>
+        <xsl:when test="$child = $empty_child">
+          <xsl:value-of select="concat($sq, str:replace(concat($docd, $parent, $dpos, $index), $q, $qq), $qcs)" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="concat($sq, str:replace(concat($docd, $child), $q, $qq), $qcs)" />
+        </xsl:otherwise>
+      </xsl:choose>
+      	<xsl:value-of select="concat($q, str:replace(normalize-space(.), $q, $qq), $q)"
+      	/>
+      <xsl:text> )</xsl:text>
+    </xsl:if>
+  </xsl:template>
+  
+</xsl:stylesheet>

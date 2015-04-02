@@ -1,0 +1,465 @@
+#!/usr/bin/gawk -f
+
+function help_() {
+		# getline cmdline < "/proc/self/cmdline"
+		# split(cmdline,cmdarray,"\0");
+		# pgm_path=T[3];
+		# pgm_name=gensub(/^.*\//, "", pgm_path);
+		pgm_name="make-depends-by-rule"
+		pgm_usage="[debug] [show-input] [no-comments] [no-empty-lines] [auto-schema] [auto-schema-path] [no-depend] [no-depend-path]"
+		pgm_purpose="Generate Makefile from simple dependencies by rule";
+		pgm_version="0.5";
+		pgm_notes="";
+}
+
+function help() {
+		help_();
+		switch (ARGV[1]) {
+		case "--what":
+				printf("%s: %s\n", pgm_name, pgm_purpose);
+				exit(0);
+		case "--how":
+				printf("Usage: %s %s\n", pgm_name, pgm_usage);
+				exit(0);
+		case "--about":
+				printf("%s: version %s\n", pgm_name, pgm_version);
+				exit(0);
+		case "--info":
+				if (pgm_notes != "")
+					printf("%s: %s\n%s\n", pgm_name, pgm_version, pgm_notes);
+				else
+					printf("%s: %s\n", pgm_name, pgm_version);
+				exit(0);
+		}
+}
+#purpose: Generate Makefile from simple dependencies by rules
+
+# * Introduction
+
+# See TO-DOs and other notes at the bottom
+
+# Input lines: Source files, special requests and (template) makefile lines
+# Output lines: Valid makefile dependencies and rules, optionally commented
+# Request lines match $1 ~ /^#(REQUEST-NAME)/
+# i.e. the first non-blank character must be # followed by a valid keyword
+
+# REQUEST	- ASSOCIATED VARIABLE	- COMMENT
+# set/unset	- option[]		- boolean or string option
+# gen-var	- gen_var[]		- substitutions for "var=" parameters
+# schema	- gen_var[]		- push or pop search_path schema
+
+# OPTIONS	- COMMENT
+# debug		- turns on lots of debugging comments
+# show-input	- shows input lines as comments
+# no-comments	- do not copy comment in put through to output
+# no-empty-lines	- do not copy empty lines through to output
+# auto-schema	- src base name pattern/capture to auto start new schema
+# auto-schema-path	- same but match against src path
+# no-depend		- pattern matches bases to not use as dependencies
+# no-depend-path	- same but match against path
+
+# gen_var[] is used by *_gen_var() to automagically
+# expand parameters of the form name= and 'name=
+
+# * support functions
+
+# ** warnings, errors and checking
+
+function show(msg) {
+    printf(show_format, FILENAME, FNR, msg == "" ? $0 : msg)
+}
+function kind_show(kind, msg) {
+    show( kind ": " (msg == "" ? $0 : msg))
+}
+function warning(msg) { kind_show("Warning", msg) }
+function unkind_show(kind, msg, code) {
+    kind_show(kind, msg); exit (code+0) ? code : 1
+}
+function error(msg, code) { unkind_show("Error", msg, code) }
+function assert(bool, msg, code) {
+    if (!bool) unkind_show("Assertion failed", msg, code)
+}
+
+function is_set(opt) { return option[opt] != "" }
+
+# ** array goodness
+
+function ra_key_str(ra, key, name) {
+    return sprintf("%s[%s]=\"%s\"", name, key, ra[key])
+}
+
+function ra_key_val(ra, key, val, name) {
+    ra[key] = val
+    if (is_set("debug"))
+	show(ra_key_str(ra, key, name))
+}
+
+function ra_key_newval(ra, key, val, name) {
+    if (ra[key] == "") ra_key_val(ra, key, val, name)
+}
+
+function ra_delete(ra, name) {
+    if (is_set("debug"))
+	kind_show("delete array", name)
+    delete ra
+}
+
+function ra_key_delete(ra, key, name) {
+    if (is_set("debug"))
+	kind_show("delete", sprintf("%s[%s]", name, key))
+    delete ra[key]
+}
+
+function ra_append1(ra, item, name) {
+    ra_key_val(ra, ++ra["len"], item, name)
+}
+
+# ** quoting for gen_var parameters
+
+# quote_with(str, quote-char, quoted-quote-char)
+# returns str inside of a pair of quote-char quotes
+# any quote-char inside of str is replaced by quoted-quote-chars
+function quote_with(str,q,qq) { return q gensub(q, qq, "g", str) q }
+
+# quote(quote-type, str) - calls quote_with appropriately
+function quote(type, str) {
+    if (quotes[type] != "")
+	return quote_with(str, quotes[type], quoted_quotes[type]);
+    error("quote(" type ", " str "): unknown type " type)
+}
+
+# Parameter values have to be passed throught the
+# shell.  Try the more readable simple cases first.
+function shell_quote(p) {
+    if (p !~ /[']/) return "'" p "'"
+    if (p !~ /[\"$\\`]/) return "\"" p "\""
+    return "'" gsub(/'/, "'\\''", p) "'"
+}
+
+# ** managing sequences
+
+# allows us to iterate up or down a sequence
+function from_to_by(from, to, by) {
+    return by > 0 ? from <= to : by < 0 ? from >= to :
+	error("from_to_by(" from "," to "," by ")" )
+}
+
+# returns the specified range of input fields joined by ofs
+function fields(from, to, ofs, by, result) {
+    # initialize optional parameters
+    if (ofs == "") ofs = OFS
+    if (by == 0) by = (from > to) ? -1 : 1
+    if ( result == "" && from_to_by(from, to, by) ) {
+	result = $from ; from = from + by
+    }
+    # add any additional fields separated by ofs
+    while ( from_to_by(from, to, by) ) {
+	result = result ofs $from ; from = from + by
+    }
+    return result
+}
+
+# returns the specified range of array elements joined by ofs
+function elements(array, from, to, ofs, by, result) {
+    # initialize optional parameters
+    if (ofs == "") ofs = OFS
+    if (by == 0) by = (from > to) ? -1 : 1
+    if ( result == "" && from_to_by(from, to, by) ) {
+	result = array[from] ; from = from + by
+    }
+    # add any additional elements separated by ofs
+    while ( from_to_by(from, to, by) ) {
+	result = result ofs array[from] ; from = from + by
+    }
+    return result
+}
+
+# manage the schema path
+
+# aka current schema
+function top_schema() {
+    return num_schemas ? schema_stack[num_schemas] : "public"
+}
+function schema_path() {
+    return num_schemas ? elements(schema_stack, num_schemas, 1, ",") : "public"
+}
+function gen_var_schemas() {
+    gen_var["schema"] = gen_var["top_schema"] = top_schema()
+    gen_var["schemas"] = gen_var["schema_path"] = gen_var["search_path"] = schema_path()
+}
+function push_schema(schema) {
+    if (num_schemas == 0 || top_schema() != $2)
+	ra_key_val(schema_stack, ++num_schemas, $2, "schema_stack")
+    gen_var_schemas()
+}
+function pop_schema() {
+    assert( num_schemas > 0 )
+    ra_key_delete(schema_stack, num_schemas, "schema_stack")
+    --num_schemas;
+    gen_var_schemas()
+}
+
+# manage generated parameters
+
+# record first and last occurrance of a file type
+# (extension) in the dependencies list for possible
+#reference by a gen_var
+function gen_var_file_type(f, type) {
+    if (type == "") type = file_type(f)
+    if (type == "") return
+    gen_var_type[type] = 1;
+    ra_key_newval(gen_var, "first_" type, f, "gen_var")
+    ra_key_val(gen_var, "last_" type, f, "gen_var")
+}
+
+# maybe_gen_var
+function maybe_gen_var(var) {
+    if (var !~ /^['\"=]?[.]?[a-zA-Z_]+=$/)
+	return ""
+    else
+	return tolower( gensub(/[='\"]/, "", "g", var) )
+}
+
+# is var a gen_var variable?
+function is_gen_var(word, var) {
+    if (var == "")
+	if ( (var = maybe_gen_var(word)) == "" )
+	    return 0
+    if (gen_var[var] != "")
+	return 1
+    if (v !~ /^(first|last)_/)
+	warning("is_gen_var " var " unknown")
+    return 0
+}
+
+# return the appropriate parameter string for a gen_var
+# given is_gen_var(word, var) and type = src["type"]
+function get_gen_var(word, var, type, val, p) {
+    if (val == "") val = gen_var[var]
+    if (word ~ /^=?(['\"]|quoted_)/) {
+	var =  "quoted_" var
+	val=quote(type, val)
+    }
+    assert((p = param_syntax[type]) != "", "no param syntax for " type)
+    return sprintf(p, var, shell_quote(val))
+}
+
+# file names and paths
+
+function file_type(path) { return gensub(/.*\./, "", 1, path) }
+
+function parse_file(ra, path, name) {
+    ra_key_val(ra, "path", path, name)
+    ra_key_val(ra, "file", gensub(/.*\//, "", 1, path), name)
+    ra_key_val(ra, "base", gensub(/\.[^.]*$/, "", 1, ra["file"]), name)
+    ra_key_val(ra, "type", file_type(path), name)
+}
+
+# * Initialization and Special Considerations
+
+BEGIN {
+    show_format = "#%s[%d] %s\n"
+    # initial default target extension(s)
+    rule_target["c"] = "o"	# .c files produce .o files
+    # initial parameter quoting syntax
+    quotes["c"] = "\"" ;	quoted_quotes["c"] = "\\\""
+    quotes["sql"] = "'" ;	quoted_quotes["sql"] = "''";
+    quotes["shell"] = "'" ;	quoted_quotes["shell"] = "'\"'\"'"
+    quotes["shell2"] = "\"" ;	quoted_quotes["shell2"] = "\\\""
+    # initial parameter passing syntax
+    param_syntax["c"] = "-D %s=%s"
+    param_quote["c"] = "shell" ;    param_quoted["c"] = "shell"
+    param_syntax["sql"] = "--variable %s=%s"
+    param_quote["sql"] = "shell" ;  param_quoted["sql"] = "shell"
+}
+
+/^\t/ { rules_mode = 1 }
+
+# print pending_output if called for explicitly
+/^\t%/ {
+    assert(pending_output != "", "expected pending output")
+    print pending_output
+    pending_output = ""
+    next
+}
+
+# pass any other tab-indented line through unchanged
+/^\t/ { print ; next }
+
+# Use the debug option to get debugging
+# use filename and FNR ???
+$1 == "#set" && $2 == "show-input" || is_set("show-input") && NF {
+  show()
+}
+
+# * Requests
+
+# Set option request allows for flags and variables
+#set uses the whole line, so no room for #comments
+$1 == "#set" && /#.*#/ {
+    print "#Warning line " NR " value includes a #:"
+}
+$1 == "#set" && NF == 2 { ra_key_val(option, $2, 1, "option") ; next }
+$1 == "#set" && NF > 2 { ra_key_val(option, $2, fields(3, NF), "option") ; next }
+$1 == "#unset" && NF == 2 { ra_key_delete(option, $2, "option") ; next }
+
+#schema schema-name -- push a schema
+#schema pop [schema-name]
+#schema schema-name pop
+$1 == "#schema" {
+    if ($2 == "pop") {
+	assert(NF < 3 || $3 == top_schema() || $3 ~ /^#/)
+	assert(NF < 4 || $3 ~ /^#/ || $4 ~ /^#/)
+	pop_schema()
+    } else if ($3 == "pop") {
+	assert($2 == top_schema())
+	assert(NF < 4 || $4 ~ /^#/)
+	pop_schema()
+    } else {
+	assert(NF == 2 || NF > 2 && $3 ~ /#/)
+	push_schema($2)
+    }
+    next
+}
+
+#rule target-extension source-extension command...
+#rule request introduces a new make rule
+$1 == "#rule" {
+    assert( NF >= 3 )
+    if (rule_target[$3] == "")
+	ra_key_val(rule_target, $3, $2, "rule_target")
+    if ( NF > 3 )
+	ra_key_val(rule, $3, fields(4, NF), "rule")
+    next
+}
+
+#target target-extension source-extension
+#target request sets a default target extension
+$1 == "#target" {
+    assert( NF == 3 )
+    ra_key_val(rule_target, $3, $2, "rule_target")
+    next
+}
+
+#quotes source-extension outer-quotes quoted-quotes
+#quotes request sets quotes for passing parameters
+$1 == "#target" {
+    assert( NF == 4 )
+    ra_key_val(quotes, $2, $3, "quotes")
+    ra_key_val(quoted_quotes, $2, $4, "quoted_quotes")
+    next
+}
+
+# * Comments and Empty Lines
+
+NF == 0 { if (!is_set("no-empty-lines")&&!is_set("show_input")) print;  next }
+$1 ~ /^#/ { if (!is_set("no-comment-lines")&&!is_set("show_input")) print ; next }
+
+# * Dependencies
+
+pending_output != "" && !rules_mode {
+    print pending_output
+}
+
+{
+    pending_output = ""
+    rules_mode = 0
+    for (t in gen_var_type) {
+	delete gen_var["first_" t]
+	delete gen_var["last_" t]
+    }
+    delete gen_var_type
+}
+
+# Figure out target, source, dependencies and special parameters
+{
+    if ( $1 ~ /:$/ ) {
+	# explicit target
+	parse_file(target, gensub(/:$/, "", 1, $1), "target")
+	assert( NF > 1 )
+	parse_file(src, $2, "src")
+	i = 3
+    } else {
+	# implicit target
+	parse_file(src, $1, "src")
+	assert( rule_target[src["type"]] != "",
+		"no rule for extension " src["type"] )
+	parse_file(target, src["base"] "." rule_target[src["type"]], "target")
+	i = 2
+    }
+    gen_var["source"] = gen_var["file_name"] = src["path"]
+    depends["len"] = 0
+    ra_append1(depends, src["path"], "depends")
+    params["len"] = 0		# desirable ???
+    for ( ; i <= NF ; i++)
+	if ( maybe_gen_var($i) != "" )
+	    ra_append1(params, $i, "params")
+	else {
+	    gen_var_file_type($i)
+	    ra_append1(depends, $i, "depends")
+	}
+}
+
+# automagically generate a new schema if the source matches
+# the auto-schema pattern and returns the name of the schema to use,
+# e.g. "([a-z_]*)[_-]schema$" so that util_spi_schema.sql
+# would generate an implicit #schema util_spi
+( (x=option["auto-schema"]) != "" && match(src["base"], x, src_pieces) ) ||
+( (y=option["auto-schema-path"]) != "" && match(src["path"], y, src_pieces) ) {
+    push_schema(src_pieces[1]); delete src_pieces
+}
+
+# generate the make dependency line
+
+{
+    printf("%s:", target["file"])
+    for (i = 1; i <= depends["len"]; i++)
+	printf(" %s", depends[i])
+}
+
+last_target != "" { printf(" %s", last_target) }
+{ printf("\n") }
+
+# update last_target unless target matches the
+# no-depend pattern, e.g.: "[_-](test|tst)$"
+( (x=option["no-depend"]) == "" || !match(target["base"], x) ) &&
+( (y=option["no-depend-path"]) == "" || !match(target["path"], y) ) {
+    if (debug && x != "") {
+	show("no-depend " x)
+	show("base ", target["base"])
+    }
+    if (debug && y != "") {
+	show("no-depend-path " y)
+	show("path ", target["path"])
+    }
+  last_target = target["path"]
+  if (debug) print "#last_target = " last_target
+}
+
+# generate any rule-based make dependency line
+
+# add any custom rule for this file type
+rule[src["type"]] != "" {
+    n = split(rule[src["type"]], word)
+    for (i = 1; i <= n; i++)
+	if (word[i] == "%=")
+	    warning(word[i] ": unimplemented feature")
+	else if ( (v = maybe_gen_var(word[i]) ) == "" )
+	    pending_output = pending_output " " word[i]
+	else if ( is_gen_var(word[i], v) )
+	    pending_output = pending_output " " get_gen_var(word[i], v, src["type"])
+    sub(/^ /, "\t", pending_output)
+    delete word
+}
+
+END {
+    if (pending_output != "" && !rules_mode)
+	print pending_output
+}
+
+# TO DO
+# Appreciate the lovely code!
+# rethink auto-schema or #schema so that it:
+#	(1) creates or (destroys and recreates) the schema
+#	(2) changes to that schema
+#	This will probably mean dropping an extra rule!

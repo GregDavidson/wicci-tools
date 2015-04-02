@@ -1,0 +1,3 @@
+pgsql-install-as-postgres FAILED: test  = postgres
+pgsql-install-as-postgres FAILED: test  = postgres
+OK: test postgres = postgres

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# To Do:
+# Have filename be the default document name
+# and maybe URL too.
+
+default_settings="~/.Wicci/Core/S7_wicci/settings.sql"
+
+pgm="${0##*/}"
+pgm_purpose="convert xml document to sql script which will intern it"
+msg() { 2>&1 printf '%s\n' "$*"; }
+die() { code=$1; shift; msg "$*"; exit "$code"; }
+err() { code=$1; shift; die $code "$pgm error:" "$*"; }
+
+usage="Usage: $pgm xml-input-file [sql-output-file]"
+xsl_script="~/.Wicci/Core/Lib/XSL/xml-to-sql.xsl"
+
+#$ = 1 || #$ = 2 || die 2 "$usage"
+
+case "$1" in
+		(*.htm) ;;
+		(*.html) ;;
+		(*.xhtml) ;;
+		(*.svg) ;;
+		(*.xml) ;;
+		(*.xml4sql) ;;
+		(*)  msg $usage; exit 3 ;;
+esac
+
+case "$2" in
+		(*.sql) ;;
+		(*)  msg $usage; exit 3 ;;
+esac
+
+case $# in
+		(1)	out_file="${1%.*}.sql";	out_file="${out_file##*/}" ;;
+		(2) out_file="$2" ;;
+esac
+
+{
+		if [ -f "settings.sql" ]; then
+				printf '\i %s\n' 'settings.sql'
+		else
+				[ -f "$default_settings" ] || err 5 "No file $default_settings"
+				printf '\i %s\n' "$default_settings"
+		fi
+
+		cat <<EOF
+	SELECT set_file('\$out_file', '\$Id');
+
+	-- This file was generated automatically by
+	-- $pgm
+	-- Any changes you make to it are likely to be lost!
+
+	-- Any Copyrights which apply to the source file
+	-- very likely apply to this derived file as well!
+
+EOF
+		xsltproc --nonet "$xsl_script" "$1"
+} > "$out_file"

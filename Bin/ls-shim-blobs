@@ -1,0 +1,16 @@
+#!/bin/bash
+#Purpose: blob_oid_uri_text for Shim/Limbo/Blobs/shim-iter-blob-*.out
+#This is hokey, deprecate or fix!!
+cd ~/.Wicci/Core
+D1=Shim/Limbo/Blobs
+D2=XFiles/Domain
+cd $D1
+blob_text() {
+	psql -c "SELECT '*' || blob_oid_uri_text($1)"	wicci1 |
+	sed -n 's/^ *\*//p'
+}
+for f in shim-iter-blob-*.out; do
+	i="${f##*-}"
+	i="${i%\.out}"
+	echo "$D1/$f $D2/$(blob_text $i)"
+done

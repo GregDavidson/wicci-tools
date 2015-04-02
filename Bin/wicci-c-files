@@ -1,0 +1,11 @@
+#!/bin/sh
+pgm_purpose='list Wicci System C files'
+eval `wicci-paths +`
+for d in `cat $WICCI_CORE/WICCI-CORE-DIRS`; do
+  if [ -f "$WICCI_CORE/$d/WICCI-C-FILES" ]; then
+    for f in `cat $WICCI_CORE/$d/WICCI-C-FILES`; do
+      ff=$WICCI_CORE/$d/$f
+      echo ${ff##$PWD/}
+    done
+  fi
+done

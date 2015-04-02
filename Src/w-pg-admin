@@ -1,0 +1,111 @@
+#!/bin/sh -u
+# J. Greg Davidson, 5 December 2005
+program=`basename $0`		# Program knows it's own name
+purpose="Manage PostgreSQL database"
+options="-e"
+option_e='-e\t-- show PostgreSQL commands used to perform operation(s)'
+option_help="\n\t$option_e"
+arguments="(status|create|recreate|destroy|backup|save-schema|save-data)"
+
+# Instance variables:
+db_home=/home/greg/Projects/Current/PostgreSQL/Molecules
+db_name=templates
+db_langs="pgsql"
+
+export PATH=/usr/sbin:/bin:/usr/bin
+
+# Boiler plate (next 3 paragraphs)
+
+version='$Id: w-pg-admin,v 1.1 2006/01/03 19:04:40 greg Exp $'			# RCS will expand this
+syntax="$program [$options] $arguments"
+usage="Usage: $syntax"
+help="$syntax$option_help\n\t-- $purpose"
+
+stderr() { >&2 echo "$*"; }
+die() { code=$1; shift; stderr "$@"; exit $code; }
+error() { code=$1; shift; die $code "$0 error: $*"; }
+die0() { echo -e "$@"; exit 0; }
+
+case "${1:-}" in
+--help) die0 $help ;;
+--usage) die0 $usage ;;
+--version) die0 $version ;;
+esac
+
+# Process options
+
+opts=""
+while getopts "e" myopt; do 
+    case "$myopt" in
+    e)    opts="-e" ;;
+    '?')  die 1 $usage ;;
+    esac    
+done
+
+shift `expr $OPTIND - 1`
+
+# Check assumptions
+
+[ "$#" -eq 1 ] || die 1 $usage
+
+db_running || error 2 "PostgreSQL doesn't seem to be running"
+
+cd "$db_home" || error 3 "Can't cd to $db_home" 
+
+# Define semantic functions
+
+db_running() {
+  if [ -x /etc/rc.d/init.d/postgresql ]; then
+    /etc/rc.d/init.d/postgresql status 2>&1 >/dev/null
+  else
+    ps agx | awk '$5 ~ /^postgres/{n++}END{exit(n<=3)}'
+  fi
+}
+status() {
+   psql --command="\\l" 2>/dev/null | grep "^ *${db_name} *|"
+}
+db_exists() {
+    status > /dev/null
+}
+db_required() {
+    db_exists || error 4 "Database ${db_name} doesn't seem to exist"
+}
+db_forbidden() {
+    db_exists && error 5 "Database ${db_name} already exists"
+}
+drop() {
+  db_required
+  dropdb $opts -i $db_name
+}
+create() {
+  db_forbidden
+  createdb $opts $db_name
+  for lang in $db_langs; do
+    createlang $opts "$lang"
+  done
+}
+backup() {
+  db_required
+  pg_dump --oids $db_name > $db_name.$(date -I).backup
+}
+save_schema() {
+  db_required
+  pg_dump -schema-only $db_name > $db_name.$(date -I).schema
+}
+save_data() {
+  db_required
+  pg_dump --data-only --oids $db_name > $db_name.$(date -I).data
+}
+
+# Process command
+
+case "$1" in
+  status) status ;;
+  create) create ;;
+  recreate) db_exists && drop; create ;;
+  destroy) drop ;;
+  backup) backup ;;
+  save-schema) save_schema ;;
+  save-data) save_data ;;
+  *) die 1 $usage ;;
+esac

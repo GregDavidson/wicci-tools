@@ -1,0 +1,10 @@
+#!/bin/sh
+pgm_purpose='generate debug_ons for sql funcs using debug_entered'
+eval `wicci-paths +`
+lister="$WICCI_BIN/wicci-sql-files"
+[ -x "$lister" -a -f "$lister" ] || err no program "$lister"
+try cd "$WICCI_CORE"
+pattern=".*debug_entered([[:space:]]*\\('[^']*'::regprocedure\\).*"
+msg "$pgm pattern=$pattern"
+grep "$pattern" `$lister` |
+  sed "s/$pattern/SELECT debug_on(\\1, true);/"

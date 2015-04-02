@@ -1,0 +1,9 @@
+#!/bin/sh
+pgm_purpose='list functions defined using FUNCTION_DEFINE'
+/usr/bin/sed -n \
+	-e '/\<FUNCTION_DEFINE\>/!d' \
+	-e 's/\<FUNCTION_DEFINE\>(\([^)]*\))[[:space:]]*{.*}/\1/' \
+	-e 's/\<FUNCTION_DEFINE\>(\([^)]*\))[[:space:]]*{[[:space:]]*/\1/' \
+	-e 's|//[[:space:]]*| |' \
+	-e p \
+    "$@"

@@ -1,0 +1,6 @@
+#!/usr/bin/sed -n -f
+#purpose: list functions defined using FUNCTION_DECLARE
+/\<FUNCTION_DECLARE\>/!d
+s/\<FUNCTION_DECLARE\>(\([^)]*\));[[:space:]]*/\1/
+s|//[[:space:]]*| |
+p

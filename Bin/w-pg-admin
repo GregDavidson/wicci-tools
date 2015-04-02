@@ -1,0 +1,203 @@
+#!/bin/sh -u
+# J. Greg Davidson, 5 December 2005
+pgm_name=`basename $0`		# Program knows it's own name
+pgm_purpose='Administer PostgreSQL Wicci database'
+
+# default configuration
+config_script=db-config.sh
+script_dir=/home/greg/Projects/Current/PostgreSQL/Molecules
+db_name=molecules
+verbose=false
+wet_run=true
+db_langs="plpgsql"
+pgsql="/usr/local/pgsql"
+pgsql_bin="$pgsql/bin"
+pgsql_data="$pgsql/data"
+
+options="-c alt-db-config.sh -d script-directory -n -v"
+option_c="-c alt-db-config.sh \t-- supply alternative config script; default: $config_script"
+option_d="-d config-directory \t-- directory containing scripts; default: $script_dir"
+option_n="-n\t-- (dry-run) show what would happen, but don't do it , default: $wet_run"
+option_v="-v\t-- (verbose) show detailed PostgreSQL commands, default: $verbose"
+option_help="\n\t$option_c\n\t$option_d\n\t$option_v"
+arguments="(status|check_files|create|recreate|destroy|backup|save-schema|save-data)"
+my_pg_bin=/home/greg/Play/PostgreSQL/Molecules
+export PATH="$my_pg_bin:$pgsql_bin:/usr/sbin:/bin:/usr/bin"
+
+# Boiler plate (next 3 paragraphs)
+
+version='$Id$'			# RCS will expand this
+syntax="$pgm_name [$options] $arguments"
+usage="Usage: $syntax"
+help="$syntax$option_help\n\t-- $pgm_purpose"
+
+stderr() { >&2 echo "$*"; }
+die() { code=$1; shift; stderr "$@"; exit $code; }
+error() { code=$1; shift; die $code "$0 error: $*"; }
+die0() { echo -e "$@"; exit 0; }
+
+case "${1:-}" in
+--help) die0 $help ;;
+--usage) die0 $usage ;;
+--version) die0 $version ;;
+esac
+
+# Process options
+
+psql_options=""
+while getopts "c:d:nv" myopt; do 
+    case "$myopt" in
+    c) config_script=$OPTARG ;;
+    d) script_dir=$OPTARG ;;
+    n) wet_run=false; verbose=true ;;
+    v) verbose=true; psql_options="$psql_options -e" ;;
+    '?')  die 1 $usage ;;
+    esac    
+done
+
+shift `expr $OPTIND - 1`
+
+# Define semantic functions
+
+pg_running() {
+    "$verbose" && stderr vis_pg_ctl status
+    "$wet_run" && vis_pg_ctl status > /dev/null
+}
+status() {
+  pg_running && (
+    "$verbose" && stderr 'psql --command="\\l" 2>/dev/null' '|' 'grep "^ *'"${db_name}"' *|"'
+    "$wet_run" && ( psql --command='\l' 2>/dev/null | grep "^ *${db_name} *|" )
+  )
+}
+db_exists() {
+    status > /dev/null
+}
+db_required() {
+    db_exists || error 4 "Database ${db_name} doesn't seem to exist"
+}
+db_forbidden() {
+    db_exists && error 5 "Database ${db_name} already exists"
+}
+drop() {
+  db_required
+  "$verbose" && stderr dropdb $opts -i $db_name
+  "$wet_run" && dropdb $opts -i $db_name
+}
+check_files() {
+  if  [ -n "$db_files_dir" ]; then
+    cd "$db_files_dir" || error 6  cd "$db_files_dir" failed
+  fi
+  if [ -n "$db_files" ]; then
+    i=1
+    echo "$db_files" | while read f revision junk; do
+      if [ -n "$junk" ]; then
+        error 7  "db_files[$i]: $f $revision $junk"
+        return 1
+      elif [ -n "$f" ]; then
+          if [ -n "$revision" ]; then
+            "$verbose" && stderr co -p -r"$revision" "$f"
+            "$wet_run" && co -p -r"$revision" "$f"
+          elif [ -n "$db_version" ]; then
+            "$verbose" && stderr co -p -r"$db_version" "$f"
+            "$wet_run" && co -p -r"$db_version" "$f"
+          elif [ -r "$f" -a ! -e "#${f}#" ]; then
+            "$verbose" && stderr cat "$f"
+            "$wet_run" && cat "$f"
+          else
+            "$verbose" && stderr co -p "$f"
+            "$wet_run" && co -p "$f"
+          fi
+      fi
+      i=`expr $i + 1`
+    done
+  fi > /dev/null
+}
+create() {
+  db_forbidden
+ "$verbose" && stderr createdb $opts $db_name
+ "$wet_run" && createdb $opts $db_name
+  for lang in $db_langs; do
+    "$verbose" && stderr createlang $opts "$lang" $db_name
+    "$wet_run" && stderr createlang $opts "$lang" $db_name
+  done
+    (
+    if [ -n "$db_first" ]; then
+      "$verrbose" && stderr "$db_first"
+      "$dry_run" && echo "$db_first"
+    fi
+    if [ -n "$db_files" ]; then
+      i=1
+      check_files &&
+      echo "$db_files" | while read f revision junk; do
+        if [ -n "$junk" ]; then
+          error 7  cd "db_files[$i]: $f $revision $junk"
+        elif [ -n "$f" ]; then
+          if [ -n "$revision" ]; then
+            "$verbose" && stderr co -r "$revision" -p  "$f"
+            "$wet_run" && co -r "$revision" -p  "$f"
+          elif [ -n "$db_version" ]; then
+            "$verbose" && stderr co -r "$db_version" -p  "$f"
+            "$wet_run" && co -r "$db_version" -p  "$f"
+          elif [ -r "$f" -a ! -e "#${f}#" ]; then
+            "$verbose" && stderr cat "$f"
+            "$wet_run" && cat "$f"
+          else
+            "$verbose" && stderr co -p "$f"
+            "$wet_run" && co -p "$f"
+          fi
+        fi	 
+      done
+      i=`expr $i + 1`
+    fi
+    if [ -n "$db_last" ]; then
+      "$verrbose" && stderr "$db_last"
+      "$dry_run" && echo "$db_last"
+    fi
+    ) | (
+      "$verrbose" && stderr psql $opts "$db_name"
+      if "$wet_run"; then
+        psql $opts "$db_name"
+      else
+        cat >&2
+      fi
+    )
+}
+backup() {
+  db_required
+  "$verbose" && stderr pg_dump --oids $db_name '>' $db_name.$(date -I).backup
+  "$wet_run" && pg_dump --oids $db_name > $db_name.$(date -I).backup
+}
+save_schema() {
+  db_required
+  "$verbose" && stderr pg_dump -schema-only $db_name '>' $db_name.$(date -I).schema
+  "$wet_run" && pg_dump -schema-only $db_name > $db_name.$(date -I).schema
+}
+save_data() {
+  db_required
+  "$verbose" && stderr pg_dump --data-only --oids $db_name '>' $db_name.$(date -I).data
+  "$wet_run" && pg_dump --data-only --oids $db_name > $db_name.$(date -I).data
+}
+
+# Check assumptions
+
+[ "$#" -eq 1 ] || die 1 $usage
+
+pg_running || error 2 "PostgreSQL doesn't seem to be running"
+
+cd "$script_dir" || error 3 "Can't cd to $script_dir" 
+
+. "$config_script" ||  error 4 "Error #$? sourcing $config_script"
+
+# Process command
+
+case "$1" in
+  status) status ;;
+  check[-_]files) check_files ;;
+  create) create ;;
+  recreate) db_exists && drop; create ;;
+  destroy) drop ;;
+  backup) backup ;;
+  save[-_]schema) save_schema ;;
+  save[-_]data) save_data ;;
+  *) die 1 $usage ;;
+esac

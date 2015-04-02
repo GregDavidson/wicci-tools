@@ -1,0 +1,58 @@
+#!/bin/bash
+# . go_wicci [core-dir] [database] [files-to-edit]...
+# source this file to hack on the wicci
+#Purpose: setup paths, start postgres, cd to working dir, start emacs
+
+eval `wicci-paths + simples`
+module_name=go-wicci		# needs to be name of this script!
+
+go_wicci_once=true
+while "$go_wicci_once"; do
+go_wicci_once=false
+
+simple_require paths || { warn simples ; break; }
+
+go_wicci_path=`which "$module_name"`
+[ -f "$go_wicci_path" ] || { warn program path ; break; }
+
+go_wicci_dir="${go_wicci_path%/*}"
+go_wicci_lib="$go_wicci_dir"/../Lib/wicci.sh
+[ -f "$go_wicci_lib" ] || { warn program lib ; break; }
+. "$go_wicci_lib"
+for d in /usr/local/pgsql/bin "$WICCI_BIN"; do
+	[ -d "$d" ] && pathvar_add PATH -d. -a "$d" ||
+		{ warn wicci bin ; break; }
+done
+		
+[ -n "$1" -a -d "$1" ] && { EXPORT WICCI_CORE="$1"; shift; }
+cd "$WICCI_CORE" || { warn wicci core ; break; }
+
+[ -n "$1" ] && { EXPORT WICCI_DB_NAME="$1"; shift; }
+
+. pg-control start || { warn pg-control ; }
+
+for ld_dir in /usr/local/pgsql/lib; do
+	if [ ! -d "$ld_dir" ]; then
+		warn "No load directory $ld_dir"
+	else
+		case ":$LD_LIBRARY_PATH:" in
+			::) LD_LIBRARY_PATH="$ld_dir" ;;
+			*:$ld_dir:*) ;;
+			*) LD_LIBRARY_PATH="$ld_dir:$LD_LIBRARY_PATH" ;;
+		esac
+	fi
+done
+export LD_LIBRARY_PATH
+
+unset module_name
+go_title="Go ${WICCI_DB}  $*"
+if false && type emacs-jgd > /dev/null
+then	emacs-jgd "${@:-.}" --title="$go_title"
+else	emacs "${@:-.}" --title="$go_title" &
+fi
+
+#emacs-jgd "${@:-.}" --fullscreen --title="$go_title" --eval='(subdivide-frame 4)'
+
+done
+
+set +xv

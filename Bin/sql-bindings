@@ -1,0 +1,20 @@
+#!/usr/bin/gawk -f
+#purpose: pull nice function headers out of .sql files
+BEGIN {
+  RS=""; FS="\n"
+  IGNORECASE=1
+}
+/\<LANGUAGE\>[[:space:]]+'c'/{
+# get the function head in one string
+  defn=""
+  for (i=1; i < NF && $i !~ /\<AS\>/; i++)
+    defn = defn $i " "
+  defn = defn $i
+# isolate the function head
+  defn = gensub(/.*\<FUNCTION\>[[:space:]]*/,"", "", defn)
+  defn = gensub(/[[:space:]]*\<AS\>.*/,"", "", defn)
+# make it look pretty
+  defn = gensub(/[[:space:]]*\<RETURNS\>[[:space:]]*/," -> ", "", defn)
+# print it
+  print defn
+}

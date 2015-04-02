@@ -1,0 +1,10 @@
+#!/bin/bash
+# Purpose: Give naive accounting of *.sql files
+echo .sql file count in directory: $(ls *.sql | wc -l)
+echo .sql file count in WICCI-SQL-FILES: $(fgrep .sql WICCI-SQL-FILES | wc -l)
+echo Files in directory but not in WICCI-SQL-FILES:
+for f in *.sql; do fgrep -wq "$f" WICCI-SQL-FILES || echo "$f" not found; done
+# [ -d Limbo ] !! mkdir Limbo
+# for f in *.sql; do grep -w "$f" WICCI-SQL-FILES || mv "$f" Limbo; done
+echo Files in WICCI-SQL-FILES but not in directory:
+for f in $(wicci-sql-files ); do echo "$f" | grep -q / || [ -f "$f" ] || echo "$f" not found; done

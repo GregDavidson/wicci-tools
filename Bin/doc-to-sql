@@ -1,0 +1,178 @@
+#!/bin/bash
+# Copyright (c) 2011-2014 J. Greg Davidson.  All rights reserved.
+eval `wicci-paths +`
+lib="$WICCI_TOOLS_LIB"
+set_pgm_name
+pgm_version="0.4"
+pgm_purpose="convert document files to sql"
+pgm_purpose2="send to stdout, file or PostgreSQL database"
+pgm_purposes="$pgm_purpose; $pgm_purpose2"
+
+pgm_f="-f (save to file)"
+pgm_d="-d database-name"
+pgm_p="-p psql-options"
+pgm_options_syntax="[ [$pgm_p] $pgm_d | $pgm_f ]"
+pgm_options="$pgm_f\t$pgm_d\t$pgm_p"
+pgm_args="input-file..."
+
+pgm_syntax="$pgm_name $pgm_options_syntax $pgm_args"
+pgm_usage="Usage: $pgm_syntax"
+
+# LIMITATION: doc_uri is taken literally from the filename
+
+for f; do
+	case "$f" in
+		--help)
+			echo -n "$pgm_name" "[ --help | --usage | --version ]"
+			echo -e "\t${pgm_options}" | sed 's/\t/\n\t/g'
+			die0 "-- $pgm_purposes" ;;
+		--usage) die0 $pgm_usage ;;
+		--version) die0 $pgm_version ;;
+	esac
+done
+
+default_sql_settings="$WICCI_CORE/S7_wicci/settings.sql"
+output_to_file='false'
+psql_options="" ; psql_database=""
+while getopts "fd:p:" opt; do 
+ case "$opt" in
+   f) output_to_file='true' ;;
+   d) psql_database="$OPTARG" ;;
+   p) psql_options="$OPTARG" ;;
+  '?')  die_ $LINENO $pgm_usage ;;
+  esac    
+done
+$output_to_file &&
+	[ -n "$psql_database" -o -n "$psql_options" ] && 
+	err_ $LINENO Specify database OR file options
+[ -n "$psql_options" ] && [ -z "$psql_database" ] && 
+	err_ $LINENO -p "$psql_options" requires -d database-name
+psql_options="$psql_options${psql_options:+ }$psql_database"
+
+shift `expr $OPTIND - 1`
+
+[ $# -ge 1 ] || err_ $LINENO "$pgm_usage"
+
+get_input_type() {	# e.g. css, html, etc.
+	local input_type="${1##*.}"
+	input_type="${input_type,,}"
+	case "$input_type" in
+		h) input_type='c' ;;
+		hml) input_type='html' ;;
+		jpg) input_type='jpeg' ;;
+		js) input_type='javascript' ;;
+		png) input_type='png' ;;
+		ico)
+		local file_type=$(file "$1" | sed -e 's/.*: *//' -e 's/,.*//')
+		case "$file_type" in
+			"PNG image data") input_type='png' ;;
+			"JPEG image data") input_type='jpeg' ;;
+			*) err_ $LINENO "$1's type $file_type unsupported"
+		esac
+	esac
+	echo "$input_type"
+}
+
+for f; do
+	[ -f "$f" ] || err_ $LINENO No file "$f"
+	input_type="$(get_input_type $f)"
+#	xsl="$lib/${input_type}-to-sql.xsl"
+	case "$input_type" in
+			html|xml|svg)	xsl="$lib/xml-to-sql.xsl" ;;
+			css) xsl="$lib/css-to-sql.xsl" ;;
+	esac
+	case "$input_type" in
+		html|xml|svg|css)						# these need a style sheet
+			[ -f "$xsl" ] || err_ $LINENO "No file $xsl" ;;
+			javascript) ;;						# currently become text blobs
+			png|jpeg) ;;							# become binary blobs
+#	c|h) ;;										# these will work someday!
+			*) die_ $LINENO "$pgm_usage" ;;
+	esac
+done
+
+get_file_size() {	du -Db "$1" | cut -f1; }
+
+get_blob() {
+	local doc_root lang
+	case "$2" in
+			/*) doc_root=''; lang="$2";;
+			'~'/*) doc_root=''; lang="${2/\~\\/$HOME/}";;
+			*) doc_root=$PWD; lang="$2";;
+	esac
+	>&2 printf "SELECT get_uri_path_name('%s');\n" "$1"
+	printf "SELECT get_uri_path_name('%s');\n" "$1"
+	>&2 printf \
+	"%s: SELECT get_static_xfiles_page('%s', '%s', '%s', '%s');\n" \
+		"$pgm_name"  "$1" "$lang" "$doc_root" $(get_file_size "$1")
+	printf \
+	"SELECT get_static_xfiles_page('%s'::text, '%s'::doc_lang_name_refs, '%s'::text, '%s'::bigint);\n" \
+		"$1" "$lang" "$doc_root" $(get_file_size "$1")
+}
+
+prelude() {	# input-file input-type output-file psql-options
+	# local doc_uri="${3:-${1%.*}-$2.sql}"
+	local doc_uri="$1"
+	if [ -f "settings.sql" ]; then
+		printf '\i %s\n' 'settings.sql'
+	elif [ -n "$default_sql_settings" -a -f "$default_sql_settings" ]; then
+		printf '\i %s\n' "$default_sql_settings"
+	fi
+	cat <<EOF
+\set doc_uri '''$doc_uri'''
+\set doc_type '''$2'''
+-- SELECT set_file(:doc_uri, '\$Id');
+
+-- This file was generated automatically by
+-- $0
+-- Any changes you make to it will likely be lost!
+
+-- Any Copyrights which apply to the source file
+-- should apply to this derived file as well!
+
+EOF
+}
+ 
+process_input() {	# input-file input-type output-file psql-options
+	>&2 echo $pgm_name: process_input $*
+	case "$2" in
+		html|xml|svg|css|javascript|png|jpeg) prelude "$@";;
+	esac
+	# The foreign key reference on xml_doc_id_nodes.doc
+	# must be deferred until the end of the transaction.
+	case "$2" in
+		sql) cat "$1" ;;
+		javascript) get_blob "$1" "$2" ;;				# a "text" blob
+		png|jpeg) get_blob "$1" "$2" ;;
+		css) get_blob "$1" "$2" ;;	# until we fix css-->xml
+		svg) get_blob "$1" "$2" ;;	# until we fix svg importing
+		# css)
+		# 	[ -f "$jar" ] || err_ $LINENO "No file $jar"
+		# 	java -jar "$jar" "file:$1" --xslsheet "$xsl" ;;
+		html)	xsltproc --html --novalid "$xsl" "$1" ;;
+		*)	xsltproc --novalid "$xsl" "$1" ;;
+	esac
+}
+
+process_output() {	# input-file input-type output-file psql-options
+	if [ -n "$4" ]; then	psql "-vfilename='$1'" "$4"
+	elif [ -n "$3" ]; then cat > "$3"
+	else cat
+	fi
+}
+
+process_file() {	# input-file input-type output-file psql-options
+	process_input "$@" |	process_output "$@"
+}
+
+for input_file; do
+	input_type="$(get_input_type $input_file)"
+	if $output_to_file; then
+		output_file="${input_file%.*}-${input_type}.sql"
+	else
+		output_file=''
+	fi
+	jar="$lib/css-to-xml.jar"				# css specific
+	process_file "$input_file" "$input_type" \
+		"$output_file" "$psql_options"
+done

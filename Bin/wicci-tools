@@ -1,0 +1,45 @@
+#!/bin/bash
+
+pgm_purpose='Give name and purpose of Wicci tools'
+pgm_notes='Description strings must be static - this should be fixed!'
+# Better system:
+# Check if tool supports self-description options, e.g.
+# --what, --help, --version, etc.
+# If so, run tool with desired option (specifiable on our command line)
+# if not, use existing code to try for static strings
+
+eval `wicci-paths +`
+
+# try cd "$WICCI_BIN" ## try is not being found!!!
+cd "$WICCI_BIN"
+
+[ $# = 0 ] && set -- *[!#~]
+
+for f; do
+		[ ! -f "$f" ] && continue		# warn???
+		file_kind="`file "$f"`"
+		case "$file_kind" in
+			*text*) ;;
+			*executable*)
+				printf '%s\n' "$file_kind"
+				continue ;;
+			*) ;;
+		esac
+		purpose=$( sed -n \
+				-e '/^[[:space:]]*#\?[Pp]urpose:[[:space:]]*\(.*\)/{s//\1/p;q}' \
+				-e "/^[[:space:]]*pgm_purpose='\([^']*\)'/{s//\1/p;q}" \
+				-e '/^[[:space:]]*pgm_purpose="\([^"]*\)"/{s//\1/p;q}' \
+				-e "/^[[:space:]]*program_purpose[[:space:]]\+'\([^']*\)'/{s//\1/p;q}" \
+				-e '/^[[:space:]]*program_purpose[[:space:]]\+"\([^"]*\)"/{s//\1/p;q}' \
+				-e '/^[[:space:]]*program_purpose[[:space:]]\+\(.*\)/{s//\1/p;q}' \
+				"$f"
+		)
+		if [ -z "$purpose" ]; then
+			case "$f" in
+				*.sql) printf '%s - %s script\n' "$f" 'sql' ;; 
+				*) printf '%s\n' "$file_kind" ;;
+			esac
+		else
+				printf '%s - %s\n' "$f" "$purpose"
+		fi
+done

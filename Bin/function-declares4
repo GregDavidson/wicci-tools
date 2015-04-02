@@ -1,0 +1,6 @@
+#!/bin/sh
+pgm_purpose='list functions defined using FUNCTION_DECLARE'
+sed -n \
+-e 's/.*FUNCTION_DECLARE(\([^)]*\));[[:space:]]*\/\/[[:space:]]\(.*\)/\1 \2/p' \
+-e 's/.*FUNCTION_DECLARE(\([^)]*\));[[:space:]]*$/\1/p' \
+  "$@"

@@ -1,0 +1,20 @@
+#!/bin/ksh
+#Purpose: Obsolete helper for checking Wicci files into RCS
+[[ $# = 0 ]] ||(echo 'You lose!'; exit 1)
+[[ -f WICCI-META-FILES ]] || (echo 'You lose!'; exit 1)
+cat WICCI-META-FILES |
+  while read m mx; do
+    case "$m" in
+    WICCI-*-FILES) cat "$m" ;;
+    esac |
+      while read f fx; do
+	if [[ "$f" -nt "RCS/$f,v" ]]; then
+	  clear
+	  head "$f"
+	  echo
+	  echo -n "Check in $f? [y if yes] "
+	  read y yx < /dev/tty
+	  [[ y = "$y" ]] && ci -l "$f" < /dev/tty
+	fi
+      done
+  done

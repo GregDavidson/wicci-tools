@@ -1,0 +1,3 @@
+#!/bin/bash
+pgm_purpose='List the includes of a C file'
+grep '^#include[[:space:]]*"[^"]*"' ${*:-*.[ch]}

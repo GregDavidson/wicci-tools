@@ -1,0 +1,11 @@
+#!/bin/sh
+pgm_purpose='list the Wicci System SQL files'
+eval `wicci-paths +`
+for d in `cat $WICCI_CORE/WICCI-CORE-DIRS`; do
+  if [ -f "$WICCI_CORE/$d/WICCI-SQL-FILES" ]; then
+    for f in $(awk '$1~/^[^#].*\.sql$/{print $1}' $WICCI_CORE/$d/WICCI-SQL-FILES); do
+      ff=$WICCI_CORE/$d/$f
+      echo ${ff##$PWD/}
+    done
+  fi
+done

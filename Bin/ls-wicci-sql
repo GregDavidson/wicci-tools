@@ -1,0 +1,45 @@
+#!/bin/bash
+pgm_purpose='List Wicci .sql files'
+# List the WICCI project .sql files in either
+# (1) the specified location(s)
+# (2) the current WICCI directory
+# (3) all of the WICCI directories
+# $ ls -1 *.sql | comm -3 - <(ls-wicci-sql)
+
+eval `wicci-paths +`
+WSDs="$WICCI_CORE"/WICCI-SQL-DIRS
+WSFs=WICCI-SQL-FILES
+dir_prefix() {									# directory prefix of given path, if any
+	case "$1" in
+		(*/*) d="${1%/*}" ;;
+			(*) d='' ;;
+	esac
+	case "$d" in
+			(''|'.') return 0 ;;
+			(*) echo -n "$d"/ ;;
+	 esac
+}
+list1() {	# list of bare filenames in a $WSFs script
+	awk '$1~/^[^#].*\.sql$/{print $1}'  "$1"
+}
+list2() {	# list with directory paths pre-pended
+	[[ -f "$1" ]] || return 1		# fail if no such file
+	local d=$(dir_prefix "$1")
+	for f in $(list1 "$1"); do echo "$d$f"; done
+	return 0				# we succeeded
+}
+list3() {	# allow some flexibility in paths
+	for p; do
+		list2 "$p" || list2 "$p/$WSFs" ||
+			list2 "$WICCI_CORE/$p/$WSFs" ||
+			err "No $WSFs at $p"
+	done
+}
+list_all() { list3 $(< "$WSDs"); }
+
+if [[ all = "$*" ]]; then list_all
+elif [[ "$#" -gt 0 ]]; then list3 "$@"
+elif [[ -f "$WSFs" ]]; then list3 "$WSFs"
+else list_all
+fi | sort
+exit 0

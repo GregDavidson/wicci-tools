@@ -1,0 +1,32 @@
+#!/usr/bin/gawk -f
+#purpose: Generate Makefile from Wicci .sql dependencies files
+
+# This script only handles a simple fixed case
+# for .sql files in the Wicci environment.  For a
+# more flexible approach, look at the script
+#	make-depends-by-rule
+# which should be available in the same bin.
+
+# When the input line
+# (0) is empty --> skip it
+# (1) starts with a # or TAB ---> copy it through unchanged
+# (2) starts with a ^ ---> copy it through without the ^
+# (3) any other indentation is an error ---> print a message
+# (4) otherwise it should look like:
+# source-file-name [dependencies...]
+# ---> copy it through, adding its target in front
+
+NF==0{next}
+/^[#	^]/{sub(/^\^/, ""); print; next}
+/^[ ]/{
+    printf "ERROR LINE %d --->%s!\n", NR, $0 > "/dev/stderr"
+    printf "#--->%s!\n", $0
+    next
+}
+{	target=sprintf("%s-out", $1)
+	printf("%s:", target);
+	for (i = 1; i <= NF; i++) printf " %s", $i
+	if (last_target != "") printf " %s", last_target
+	printf "\n"
+	last_target=target
+}

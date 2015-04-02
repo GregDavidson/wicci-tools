@@ -1,0 +1,21 @@
+#!/bin/sh
+pgm_purpose='cat specified WICCI-SQL-FILES...'
+eval `wicci-paths +`
+WSF=WICCI-SQL-FILES
+WSD=WICCI-SQL-DIRS
+awk_script="$WICCI_TOOLS_LIB/$pgm_name.awk"
+try [ -f "$awk_script" -a -r "$awk_script" ]
+if [ $# -ge 1 ]; then
+  cat "$@"
+elif [ -f "$WSF" ]; then
+  cat "$WSF"
+else
+  try cd "$WICCI_CORE"
+  try [ -f "$WSD" ]
+  for d in `sed -e '/^#/d' -e '/^[[:space:]]*$/d' "$WSD"`; do
+    try [ -f "$d/$WSF" ]
+  done
+  for d in `grep -v '^#' "$WSD"`; do
+    cat "$d/$WSF"
+  done
+fi | awk -f "$awk_script" -v debug=1

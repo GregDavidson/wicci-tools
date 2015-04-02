@@ -1,0 +1,63 @@
+#!/bin/bash
+#Purpose: Provide key Wicci System paths for scripts to eval
+#Usage: eval `wicci-paths [+] [simples]` -- at top of script
+
+for d in ~/.Wicci $HOME/Wicci $HOME/Projects/Wicci /Wicci; do
+		[ -d "$d" -o -L "$d" ] && WICCI_TOP="$d" && break
+done
+
+[ -z "$WICCI_TOP" ] && >&2 echo $0: No WICCI_TOP! &&
+	[ -z "$PS1" ] && exit 1
+
+printf '%s=%s; export %s;\n' WICCI_TOP "$WICCI_TOP" WICCI_TOP
+
+while read v x; do printf '%s="%s"; export %s;\n' $v $x $v; done << 'EOF'
+WICCI_DOC $WICCI_TOP/Doc
+WICCI_TOOLS $WICCI_TOP/Tools
+WICCI_TOOLS_BIN $WICCI_TOOLS/Bin
+WICCI_TOOLS_LIB $WICCI_TOOLS/Lib
+WICCI_BIN $WICCI_TOOLS_BIN
+WICCI_DB_NAME wicci1
+WICCI_OUT $WICCI_TOP/Made/$WICCI_DB_NAME
+WICCI_FILES $WICCI_TOP/XFiles
+WICCI_BLOB $WICCI_FILES/Blob
+WICCI_CSS $WICCI_FILES/CSS
+WICCI_HTML $WICCI_FILES/HTML
+WICCI_JS $WICCI_FILES/JS
+WICCI_SQL $WICCI_FILES/SQL
+WICCI_SVG $WICCI_FILES/SVG
+WICCI_SQL_DIRS_NAME WICCI-SQL-DIRS
+WICCI_CORE $WICCI_TOP/Core
+WICCI_SQL_DIRS $WICCI_CORE/$WICCI_SQL_DIRS_NAME
+WICCI_SQL_FILES_NAME WICCI-SQL-FILES
+EOF
+
+for arg; do
+		case "$arg" in
+				(+)
+				case "$SHELL" in
+						(*/sh) plus='"$WICCI_TOOLS_LIB/wicci.sh"' ;;
+						(*/bash) plus='"$WICCI_TOOLS_LIB/wicci.bash"' ;;
+						(*) >&2 printf "wicci-paths warning: Unknown shell %s\n" "$SHELL"
+				esac
+				printf '. "%s";\n' $plus ;;
+				(simples)
+				case "$SHELL" in
+						(*/sh)
+						for d in $HOME $HOME/Shared /Shared; do
+								f="$d/Lib/Sh/simples.sh"
+								[ -f "$f" ] && printf '. "%s";\n' $f && break
+						done ;;
+						(*/bash)
+#						if [ -z "${simples_provided-}" ];	then # not loaded yet
+								for d in $HOME $HOME/Shared /Shared; do # find it
+										f="$d/Lib/Bash/Simples/simples.bash"
+										[ -f "$f" ] && printf '. "%s";\n' "$f" && break
+								done
+#						fi
+								;;
+						(*) >&2 printf "wicci-paths warning: Unknown shell %s\n" "$SHELL"
+				esac ;;
+				(*) >&2 printf "wicci-paths warning: Unknown argument %s\n" arg
+		esac
+done

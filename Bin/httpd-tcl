@@ -1,0 +1,53 @@
+#!/bin/bash
+
+pgm_usage="Usage: $0 [start|stop|...]"
+pgm_purpose='control tcl httpd server'
+pgm_notes='- that's all'
+
+tcl_home="/opt/ActiveTcl-8.5"
+tcl_bin="$tcl_home/bin"
+tclsh="$tcl_bin/tclsh8.5"
+wish="$tcl_bin/wish8.5"
+: ${tcl:="$wish"}
+
+tclhttpd_home=/usr/local/tclhttpd
+tclhttpd_bin="$tclhttpd_home/bin"
+tclhttpd="$tclhttpd_bin/httpd.tcl"
+
+tclhttpd_lib="~/.Wicci/Core/TclHttpd"
+
+tclhttpd_cmd() {
+    local action="$1" ; shift 1
+    case $action in
+        start)
+            cmd="cd $tclhttpd_home ; $tcl $tclhttpd"
+            cmd="$cmd -debug 1"
+            cmd="$cmd -library $tclhttpd_lib"
+            cmd="$cmd $@"
+            ;;
+        *) echo "$0: '$@' not yet implemented" ;;
+    esac
+#    sudo "$cmd"
+    eval "$cmd"
+}
+
+tclhttpd_is_running() {
+    tclhttpd_cmd status | grep 'server is running' >/dev/null
+}
+
+case $# in
+  0)	case $0 in
+		*-start) set - start ;;
+	esac ;;
+esac
+
+case $# in
+  0) tclhttpd_cmd status ; exit 0 ;;
+esac
+
+case "$1" in
+    is[_-]running) tclhttpd_is_running ;;
+    --help) echo "$pgm_usage";echo "- $pgm_purpose";echo "$pgm_notes" ;;
+    *) tclhttpd_cmd "$@" ;;
+esac
+
