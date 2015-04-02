@@ -20,8 +20,8 @@ Note: wicci-paths checks your shell and does "the right thing".
 
 ## Documentation
 
-$ wicci-tools wicci-tools
-wicci-tools -  Give name and purpose of Wicci tools
+$ wicci-tools wicci-tools	# wicci-tools describes itself
+wicci-tools		#  wicci-tools describes ALL wicci-tools
 
 $ wicci-tools
 
@@ -30,7 +30,7 @@ $ wicci-tools
 ### wicci-tools
 
 Instead of having wicci-tools grep scripts for embedded
-static strings, it would be good to have each scripts check
+static strings, it would be good to have all scripts check
 for help-related command-line options.  Wicci-tools could
 then simply loop over the selected scripts supplying the
 desired option.  This would be a win because the description
