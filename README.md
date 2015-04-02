@@ -20,10 +20,8 @@ Note: wicci-paths checks your shell and does "the right thing".
 
 ## Documentation
 
-$ wicci-tools wicci-tools	# wicci-tools describes itself
-wicci-tools		#  wicci-tools describes ALL wicci-tools
-
-$ wicci-tools
+ $ wicci-tools wicci-tools	# wicci-tools describes itself
+ $ wicci-tools		#  wicci-tools describes ALL wicci-tools
 
 ## Notes on future improvements
 
