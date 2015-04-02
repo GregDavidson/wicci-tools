@@ -2,7 +2,7 @@
 
 ## Subdirectories:
 		  Bin/	- Utilitiy Programs (mostly scripts) for the Wicci System
-		  Lib/		- files needed by some Utility Programs
+		  Lib/	- files needed by some Utility Programs
 		  Src/	- source files for any compiled  Utility Programs
 
 ## All scripts should be self documenting as follows:
