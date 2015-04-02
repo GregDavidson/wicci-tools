@@ -13,9 +13,9 @@ near the top of the file.
 ## wicci-paths
 
 To add key Wicci paths, etc. to your script, put one of these at the top:
-		eval `wicci-paths`		-- just adds key paths & filenames
-		eval `wicci-paths +`	-- also sources lib/wicci.sh
-		eval `wicci-paths simples`	-- also sources simples package
+				eval `wicci-paths`		-- just adds key paths & filenames
+				eval `wicci-paths +`	-- also sources lib/wicci.sh
+				eval `wicci-paths simples`	-- also sources simples package
 Note: wicci-paths checks your shell and does "the right thing".
 
 ## Documentation
