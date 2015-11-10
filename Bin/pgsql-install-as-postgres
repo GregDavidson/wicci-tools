@@ -44,7 +44,7 @@ try ./configure --with-libxml --with-libxslt --enable-debug --enable-cassert --w
 try make
 try make install
 # add some contributed modules
-for d in xml2 intarray citext; do
+for d in xml2 intarray citext hstore; do
 	( cd contrib/"$d" && try make install )
 done
 # create a new PostgreSQL database directory
