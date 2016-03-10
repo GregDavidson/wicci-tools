@@ -46,12 +46,14 @@ export LD_LIBRARY_PATH
 
 unset module_name
 go_title="Go ${WICCI_DB}  $*"
-if false && type emacs-jgd > /dev/null
-then	emacs-jgd "${@:-.}" --title="$go_title"
-else	emacs "${@:-.}" --title="$go_title" &
-fi
+# if false && type emacs-jgd > /dev/null
+# then	emacs-jgd "${@:-.}" --title="$go_title"
+# else	emacs "${@:-.}" --title="$go_title" &
+# fi
 
 #emacs-jgd "${@:-.}" --fullscreen --title="$go_title" --eval='(subdivide-frame 4)'
+
+emacsclient -c --alternate-editor='' . &
 
 done
 
