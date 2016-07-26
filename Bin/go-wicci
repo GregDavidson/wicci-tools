@@ -53,7 +53,7 @@ go_title="Go ${WICCI_DB}  $*"
 
 #emacs-jgd "${@:-.}" --fullscreen --title="$go_title" --eval='(subdivide-frame 4)'
 
-emacsclient -c --alternate-editor='' . &
+emacsclient -n -c --alternate-editor='' .
 
 done
 
