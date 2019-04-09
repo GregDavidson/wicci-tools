@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 pgm_purpose='list functions defined using FUNCTION_DECLARE'
 /usr/bin/sed -n \
 	-e '/^[[:space:]]*#/d' \

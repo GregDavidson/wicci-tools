@@ -1,4 +1,4 @@
-#!/bin/sh -u
+#!/bin/bash -u
 # J. Greg Davidson, 5 December 2005
 pgm_name=`basename $0`		# Program knows it's own name
 pgm_purpose='Administer PostgreSQL Wicci database'

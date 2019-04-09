@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 pgm_purpose='list the Wicci System SQL files'
 eval `wicci-paths +`
 for d in `cat $WICCI_CORE/WICCI-CORE-DIRS`; do

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/babash
 pgm_purpose='generate debug_ons for sql funcs using debug_entered'
 eval `wicci-paths +`
 lister="$WICCI_BIN/wicci-sql-files"

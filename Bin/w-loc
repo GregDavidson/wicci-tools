@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 pgm_purpose='Count Files, TABLEs, VIEWs, FUNCTIONs [draft]'
 eval `wicci-paths`
 

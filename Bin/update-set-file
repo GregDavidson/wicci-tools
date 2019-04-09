@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 pgm_purpose='Update the set_file(...) line in some or all .sql files'
 eval `wicci-paths +`
 

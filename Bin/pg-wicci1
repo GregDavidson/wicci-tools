@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 pgm_purpose='show postgres process(es) for given database or $WICCI_DB_NAME'
 eval `wicci-paths +`
 
