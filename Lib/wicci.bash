@@ -12,6 +12,13 @@ set_pgm_name() {
 }
 set_pgm_name										# see: you don't really need to call it at all!
 
+
+for d in $HOME $HOME/Shared /Shared; do # find it
+		f="$d/Lib/Bash/Simples/simples.bash"
+		[ -f "$f" ] && break
+done
+[ -f "$f" ] && simples_bash="$f"
+
 # parent script calls "include_script" below
 # include_stack_ is for scripts sourced (.) by existing shells
 push_include__() {	include_stack_="$1 $2"; }
