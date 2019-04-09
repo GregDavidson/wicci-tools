@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='Obsolete: Generate ** Provides section for a Wicci SQL File.'
 echo '-- ** Provides'
 echo

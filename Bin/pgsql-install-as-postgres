@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # --> DRAFT --> DRAFT --> DRAFT --> do you feel the DRAFT yet?
 # This script should be run by the script
 #	pgsql-install

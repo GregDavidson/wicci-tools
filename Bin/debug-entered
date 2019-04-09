@@ -1,6 +1,7 @@
-#!/bin/babash
+#!/bin/sh
 pgm_purpose='generate debug_ons for sql funcs using debug_entered'
-eval `wicci-paths +`
+eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh
 lister="$WICCI_BIN/wicci-sql-files"
 [ -x "$lister" -a -f "$lister" ] || err no program "$lister"
 try cd "$WICCI_CORE"

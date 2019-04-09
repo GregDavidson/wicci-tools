@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright (c) 2011-2014 J. Greg Davidson.  All rights reserved.
-eval `wicci-paths +`
+eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh
 lib="$WICCI_TOOLS_LIB"
 set_pgm_name
 pgm_version="0.4"

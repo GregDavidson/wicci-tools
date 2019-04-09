@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #Purpose: blob_oid_uri_text for Shim/Limbo/Blobs/shim-iter-blob-*.out
 #This is hokey, deprecate or fix!!
 cd ~/.Wicci/Core

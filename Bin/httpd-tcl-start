@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 pgm_usage="Usage: $0 [start|stop|...]"
 pgm_purpose='control tcl httpd server'

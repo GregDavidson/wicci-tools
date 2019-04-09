@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='show postgres process(es) for given database or $WICCI_DB_NAME'
-eval `wicci-paths +`
+eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh # is this really needed???
 
 db="${1:-$WICCI_DB_NAME}"
 ps -efww | awk -v db="$db" 'NR>1 && $1=="postgres" && $8=="postgres:" && $10 == db{print $2}'

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #Purpose: Run gdb on selected PostgreSQL process.
 
 # tee /dev/tty is for user to see the set of procs considered

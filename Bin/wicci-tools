@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 pgm_purpose='Give name and purpose of Wicci tools'
 pgm_notes='Description strings must be static - this should be fixed!'
@@ -8,7 +8,8 @@ pgm_notes='Description strings must be static - this should be fixed!'
 # If so, run tool with desired option (specifiable on our command line)
 # if not, use existing code to try for static strings
 
-eval `wicci-paths +`
+eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh
 
 # try cd "$WICCI_BIN" ## try is not being found!!!
 cd "$WICCI_BIN"

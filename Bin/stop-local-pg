@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='stop local PostgreSQL service'
 running=false
 while sudo su postgres -c "/usr/sbin/rcpostgresql status" | grep running; do

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # To Do:
 # Have filename be the default document name

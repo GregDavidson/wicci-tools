@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='list functions defined using FUNCTION_DEFINE'
 /usr/bin/sed -n \
 	-e '/\<FUNCTION_DEFINE\>/!d' \

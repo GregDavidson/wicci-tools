@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #Purpose: Provide key Wicci System paths for scripts to eval
 #Usage: eval `wicci-paths [+] [simples]` -- at top of script
 

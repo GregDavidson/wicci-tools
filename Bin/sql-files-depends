@@ -1,8 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='cat specified WICCI-SQL-FILES...'
-eval `wicci-paths +`
-WSF=WICCI-SQL-FILES
-WSD=WICCI-SQL-DIRS
+eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh
 awk_script="$WICCI_TOOLS_LIB/$pgm_name.awk"
 try [ -f "$awk_script" -a -r "$awk_script" ]
 if [ $# -ge 1 ]; then

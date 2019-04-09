@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -o pipefail
 echo -n 'Warning: This script is NOT a good black box!
 It does not check everything it should check, e.g.

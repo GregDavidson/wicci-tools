@@ -1,11 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 # . go_wicci [core-dir] [database] [files-to-edit]...
 # source this file to hack on the wicci
 #Purpose: setup paths, start postgres, cd to working dir, start emacs
 
 sql_dir=$HOME/SQL
 
-eval `wicci-paths + simples`
+eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh
+[ -n "$simples_sh" ] && . "$simples_sh" # error otherwise???
 module_name=go-wicci		# needs to be name of this script!
 
 go_wicci_once=true

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 echo -n 'Warning: This script is NOT a good black box!
 It does not check everything it should check, e.g.
 if an existing PostgreSQL is running it will behave badly!

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='List Wicci .sql files'
 # List the WICCI project .sql files in either
 # (1) the specified location(s)
@@ -6,7 +6,8 @@ pgm_purpose='List Wicci .sql files'
 # (3) all of the WICCI directories
 # $ ls -1 *.sql | comm -3 - <(ls-wicci-sql)
 
-eval `wicci-paths +`
+eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh
 WSDs="$WICCI_CORE"/WICCI-SQL-DIRS
 WSFs=WICCI-SQL-FILES
 dir_prefix() {									# directory prefix of given path, if any

@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/sh
 pgm_purpose='Obsolete: Start NaviServer'
 cd /usr/local/aolserver
 my/navi-start

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='add module_file_id to top of files'
 for f; do ed $f << EOF; done
 1a

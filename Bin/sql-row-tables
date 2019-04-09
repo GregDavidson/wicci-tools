@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='show the row tables of the specified .sql files'
-eval `wicci-paths +`
+eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh
 awk_pgm="$WICCI_TOOLS_LIB/$pgm_name".awk 
 if [ $# -gt 0 ]
 	awk -f "$awk_pgm" "$@"

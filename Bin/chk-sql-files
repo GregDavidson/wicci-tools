@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Purpose: Give naive accounting of *.sql files
 echo .sql file count in directory: $(ls *.sql | wc -l)
 echo .sql file count in WICCI-SQL-FILES: $(fgrep .sql WICCI-SQL-FILES | wc -l)

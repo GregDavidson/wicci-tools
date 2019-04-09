@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='Count Files, TABLEs, VIEWs, FUNCTIONs [draft]'
 eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh
 
 # Need to deal better with the free form syntax:
 # creating statements may cross line boundaries,

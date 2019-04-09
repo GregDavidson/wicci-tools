@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/sh
 pgm_purpose='list targets of makefiles'
 pgm_name="${0##*/}"
 pgm_usage="$pgm_name makefile..."

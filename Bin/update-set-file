@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 pgm_purpose='Update the set_file(...) line in some or all .sql files'
-eval `wicci-paths +`
+eval `wicci-paths`
+. $WICCI_TOOLS_LIB/wicci.sh
 
 [ $# -ne 0 ] || set -- `ls-wicci-sql`
 
