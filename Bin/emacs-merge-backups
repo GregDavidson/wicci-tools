@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pgm_purpose='obsolete?'
+pgm_purpose='deal with abandoned emacs backup files; obsolete?'
 
 note() { >&2 echo "$*" ; }
 error() { note "${0##*/} error: $*" ; }
