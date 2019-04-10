@@ -38,7 +38,7 @@ cd "$WICCI_CORE" || { warn wicci core directory "$WICCI_CORE" missing ; break; }
 
 . pg-control start || { warn pg-control ; }
 
-# Is this is still needed??
+# Is this still needed??
 # Linux specific??
 for ld_dir in "$pg_dir/pgsql/lib"; do
 	if [ ! -d "$ld_dir" ]; then
