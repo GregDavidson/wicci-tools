@@ -5,14 +5,14 @@
 
 eval `wicci-paths`
 . $WICCI_TOOLS_LIB/wicci.sh
-[ -n "$simples_sh" ] && . "$simples_sh" # error otherwise???
+[ -n "$simples_sh" ]  || { warn simples ; break; }
 module_name=go-wicci		# needs to be name of this script!
 
 go_wicci_once=true
 while "$go_wicci_once"; do
 go_wicci_once=false
 
-simple_require paths || { warn simples ; break; }
+simple_require paths || { warn simple paths missing ; break; }
 
 go_wicci_path=`which "$module_name"`
 [ -f "$go_wicci_path" ] || { warn program path ; break; }
@@ -21,19 +21,26 @@ go_wicci_dir="${go_wicci_path%/*}"
 go_wicci_lib="$go_wicci_dir"/../Lib/wicci.sh
 [ -f "$go_wicci_lib" ] || { warn program lib ; break; }
 . "$go_wicci_lib"
-for d in /usr/local/pgsql/bin "$WICCI_BIN"; do
-	[ -d "$d" ] && pathvar_add PATH -d. -a "$d" ||
-		{ warn wicci bin ; break; }
+
+for pg_dir in /usr/local/SW/pgsql /usr/local/pgsql; do
+	[ -d "$d" ] && break
+done
+[ -d "$d" ] || warn PostgreSQL directory $d missing
+
+for d in "$pg_dir/bin" "$WICCI_BIN"; do
+	pathvar_add PATH -d. -a "$d" || warn pathvar_add $d failed
 done
 		
 [ -n "$1" -a -d "$1" ] && { EXPORT WICCI_CORE="$1"; shift; }
-cd "$WICCI_CORE" || { warn wicci core ; break; }
+cd "$WICCI_CORE" || { warn wicci core directory "$WICCI_CORE" missing ; break; }
 
 [ -n "$1" ] && { EXPORT WICCI_DB_NAME="$1"; shift; }
 
 . pg-control start || { warn pg-control ; }
 
-for ld_dir in /usr/local/pgsql/lib; do
+# Is this is still needed??
+# Linux specific??
+for ld_dir in "$pg_dir/pgsql/lib"; do
 	if [ ! -d "$ld_dir" ]; then
 		warn "No load directory $ld_dir"
 	else
@@ -58,5 +65,3 @@ go_title="Go ${WICCI_DB}  $*"
 emacsclient -n -c --alternate-editor='' .
 
 done
-
-set +xv
