@@ -1,6 +1,6 @@
 #!/bin/sh
 #Purpose: Provide key Wicci System paths for scripts to eval
-#Usage: eval `wicci-paths [+] [simples]` -- at top of script
+#Usage: eval `wicci-paths` -- at top of your script
 
 for d in ~/.Wicci $HOME/Wicci $HOME/Projects/Wicci /Wicci; do
 		[ -d "$d" -o -L "$d" ] && WICCI_TOP="$d" && break
@@ -31,33 +31,3 @@ WICCI_CORE $WICCI_TOP/Core
 WICCI_SQL_DIRS $WICCI_CORE/$WICCI_SQL_DIRS_NAME
 WICCI_SQL_FILES_NAME WICCI-SQL-FILES
 EOF
-
-for arg; do
-		case "$arg" in
-				(+)
-				case "$SHELL" in
-						(*/sh) plus='"$WICCI_TOOLS_LIB/wicci.sh"' ;;
-						(*/bash) plus='"$WICCI_TOOLS_LIB/wicci.bash"' ;;
-						(*) >&2 printf "wicci-paths warning: Unknown shell %s\n" "$SHELL"
-				esac
-				printf '. "%s";\n' $plus ;;
-				(simples)
-				case "$SHELL" in
-						(*/sh)
-						for d in $HOME $HOME/Shared /Shared; do
-								f="$d/Lib/Sh/simples.sh"
-								[ -f "$f" ] && printf '. "%s";\n' $f && break
-						done ;;
-						(*/bash)
-#						if [ -z "${simples_provided-}" ];	then # not loaded yet
-								for d in $HOME $HOME/Shared /Shared; do # find it
-										f="$d/Lib/Bash/Simples/simples.bash"
-										[ -f "$f" ] && printf '. "%s";\n' "$f" && break
-								done
-#						fi
-								;;
-						(*) >&2 printf "wicci-paths warning: Unknown shell %s\n" "$SHELL"
-				esac ;;
-				(*) >&2 printf "wicci-paths warning: Unknown argument %s\n" arg
-		esac
-done
