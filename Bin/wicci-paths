@@ -11,14 +11,22 @@ done
 
 printf '%s=%s; export %s;\n' WICCI_TOP "$WICCI_TOP" WICCI_TOP
 
-while read v x; do printf '%s="%s"; export %s;\n' $v $x $v; done << 'EOF'
+while read v x; do
+	case "$x" in
+		\$*) eval "d=$x"
+				 [ -d "$d" ] || [ -f "$d" ] || >&2 printf 'Warning: %s missing!\n' "$d"
+				 eval "$v=$x"
+				 ;;
+	esac
+	printf '%s="%s"; export %s;\n' $v $x $v
+done << 'EOF'
 WICCI_DOC $WICCI_TOP/Doc
 WICCI_TOOLS $WICCI_TOP/Tools
 WICCI_TOOLS_BIN $WICCI_TOOLS/Bin
 WICCI_TOOLS_LIB $WICCI_TOOLS/Lib
 WICCI_BIN $WICCI_TOOLS_BIN
 WICCI_DB_NAME wicci1
-WICCI_OUT $WICCI_TOP/Made/$WICCI_DB_NAME
+WICCI_OUT $WICCI_TOP/Make/$WICCI_DB_NAME
 WICCI_FILES $WICCI_TOP/XFiles
 WICCI_BLOB $WICCI_FILES/Blob
 WICCI_CSS $WICCI_FILES/CSS
