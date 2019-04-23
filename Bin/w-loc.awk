@@ -1,4 +1,4 @@
-#!/usr/bin/awk
+#!/usr/bin/env awk
 #Purpose: Count TABLEs, VIEWs, FUNCTIONs, etc. [draft]'
 
 $1 = "CREATE" {

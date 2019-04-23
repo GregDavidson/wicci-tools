@@ -1,4 +1,4 @@
-#!/usr/bin/awk -f
+#!/usr/bin/env awk -f
 debug {print "#input: " $0}
 /^#/ || /^\t/ || $1 ~ /:$/{
   print
