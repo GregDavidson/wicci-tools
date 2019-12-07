@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 pgm_purpose='list various categories of Wicci files'
 eval `wicci-paths`
 . $WICCI_TOOLS_LIB/wicci.sh
 pgm_usage="Usage: $pgm [.]all|c|sql"
-[[ $# == 1 ]] || die $pgm_usage
+[[ $# == 1 ]] || die "$pgm_usage"
 case "$1" in
   (c|.c) file_lists='WICCI-C-FILES' ;;
   (sql|.sql) file_lists='WICCI-SQL-FILES' ;;
