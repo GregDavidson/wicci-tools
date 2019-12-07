@@ -1,4 +1,4 @@
-#!/usr/bin/awk
+#!/usr/bin/env awk
 #purpose: Count TABLEs, VIEWs, FUNCTIONs, etc. [draft]'
 $1 == "CREATE" { ++count[$2]; }
 $1 == "SELECT" && $2 ~ /^(create|declare)_/ {

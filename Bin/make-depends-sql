@@ -1,4 +1,4 @@
-#!/usr/bin/gawk -f
+#!/usr/bin/env gawk -f
 #purpose: Generate Makefile from Wicci .sql dependencies files
 
 # This script only handles a simple fixed case

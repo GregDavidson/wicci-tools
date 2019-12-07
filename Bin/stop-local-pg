@@ -13,9 +13,9 @@ done
 $running && exit 0
 
 # Should actually check and see if postgres is running
-pg_home=/usr/local/pgsql
+pg_home=/usr/local/SW/pgsql
 pg_data=$pg_home/data
-sudo su postgres -c "/usr/local/pgsql/bin/pg_ctl stop -D $pg_data"
+sudo su postgres -c "/usr/local/SW/pgsql/bin/pg_ctl stop -D $pg_data"
 
 if sudo /usr/sbin/rcpostgresql status | grep unused; then
   echo -n "Shall I (re)start init's postgres? [yn] "

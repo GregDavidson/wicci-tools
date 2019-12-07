@@ -10,7 +10,7 @@ db_name=molecules
 verbose=false
 wet_run=true
 db_langs="plpgsql"
-pgsql="/usr/local/pgsql"
+pgsql="/usr/local/SW/pgsql"
 pgsql_bin="$pgsql/bin"
 pgsql_data="$pgsql/data"
 

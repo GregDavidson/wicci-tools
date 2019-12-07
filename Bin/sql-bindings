@@ -1,4 +1,4 @@
-#!/usr/bin/gawk -f
+#!/usr/bin/env gawk -f
 #purpose: pull nice function headers out of .sql files
 BEGIN {
   RS=""; FS="\n"

@@ -22,7 +22,7 @@ go_wicci_lib="$go_wicci_dir"/../Lib/wicci.sh
 [ -f "$go_wicci_lib" ] || { warn program lib ; break; }
 . "$go_wicci_lib"
 
-for pg_dir in /usr/local/SW/pgsql /usr/local/pgsql; do
+for pg_dir in /usr/local/SW/pgsql /usr/local/SW/pgsql; do
 	[ -d "$d" ] && break
 done
 [ -d "$d" ] || warn PostgreSQL directory $d missing

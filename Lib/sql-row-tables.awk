@@ -1,4 +1,4 @@
-#!/bin/awk
+#!/usr/bin/env awk
 # CREATE TABLE (\w+) [(][[:space:]]*(ref|tor) (\w+) PRIMARY KEY
 # CREATE TABLE (\w+) [(][[:space:]]*PRIMARY KEY[(](ref|tor)[)]
 BEGIN{
