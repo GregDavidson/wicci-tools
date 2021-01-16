@@ -1,0 +1,14 @@
+*~
+TAGS
+TAGS-*
+Limbo
+[Tt]mp
+[Tt]emp
+[Ff]oo
+[Bb]ar
+tmp[-.]*
+foo[-.]*
+bar[-.]*
+*[-.]tmp
+*[-.]foo
+*[-.]bar
