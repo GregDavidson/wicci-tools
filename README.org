@@ -1,0 +1,87 @@
+* Directory: Wicci/Tools
+
+** NOTICE OF GitHub FAILURE
+  - As of 2026-10-01 GitHub is failing to correctly display this document!
+  - See the section below titled: ** Availability Of This Document
+
+  :PROPERTIES:
+  :CUSTOM_ID: directory-wiccitools
+  :END:
+
+** Subdirectories:
+   :PROPERTIES:
+   :CUSTOM_ID: subdirectories
+   :END:
+
+#+BEGIN_EXAMPLE
+          Bin/  - Utilitiy Programs (mostly scripts) for the Wicci System
+          Lib/  - files needed by some Utility Programs
+          Src/  - source files for any compiled  Utility Programs
+#+END_EXAMPLE
+
+** All scripts should be self documenting as follows:
+   :PROPERTIES:
+   :CUSTOM_ID: all-scripts-should-be-self-documenting-as-follows
+   :END:
+
+#+BEGIN_EXAMPLE
+       shell scripts should have a line with pgm_purpose='...'
+       other scripts should have a line with #[[:space:]]*[Pp]urpose: ...
+#+END_EXAMPLE
+
+near the top of the file.
+
+** wicci-paths
+   :PROPERTIES:
+   :CUSTOM_ID: wicci-paths
+   :END:
+
+To add key Wicci paths, etc. to your script, put one of these at the
+top: eval =wicci-paths= -- just adds key paths & filenames eval
+=wicci-paths += -- also sources lib/wicci.sh eval =wicci-paths simples=
+-- also sources simples package Note: wicci-paths checks your shell and
+does "the right thing".
+
+** Documentation
+   :PROPERTIES:
+   :CUSTOM_ID: documentation
+   :END:
+
+#+BEGIN_EXAMPLE
+          $ wicci-tools wicci-tools # wicci-tools describes itself
+          $ wicci-tools     #  wicci-tools describes ALL wicci-tools
+#+END_EXAMPLE
+
+** Notes on future improvements
+   :PROPERTIES:
+   :CUSTOM_ID: notes-on-future-improvements
+   :END:
+
+*** wicci-tools
+    :PROPERTIES:
+    :CUSTOM_ID: wicci-tools
+    :END:
+
+Instead of having wicci-tools grep scripts for embedded static strings,
+it would be good to have all scripts check for help-related command-line
+options. Wicci-tools could then simply loop over the selected scripts
+supplying the desired option. This would be a win because the
+description strings should sometimes be generated dynamically.
+** Availability Of This Document
+
+This document is normally available at all the following urls:
+- Codeberg :: 
+- GitLab :: 
+- GitHub ::
+  - GitHub is currently failing to correctly process OrgMode documents.
+  - as of 2026-10-01
+
+Please consult the LICENCE or LICENSE.org or LICENSE.md file at the
+top of this repository for freedoms and restrictions in your use of
+the contents of this repository, including this document.
+
+Even when not required, we would appreciate
+- attribution with a reference to our respository,
+- your sending us any improvements you make to these materials,
+- information about any significant usage of these materials in your projects,
+- and thank you!
